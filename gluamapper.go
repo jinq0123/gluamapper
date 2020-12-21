@@ -67,9 +67,9 @@ func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
 	case reflect.Uintptr:
 		return TBI
 	case reflect.Float32:
-		return TBI
+		return m.mapFloat32(lv, rv)
 	case reflect.Float64:
-		return TBI
+		return m.mapFloat64(lv, rv)
 	case reflect.Complex64:
 		return TBI
 	case reflect.Complex128:
@@ -261,6 +261,36 @@ func (m *Mapper) mapUint64(lv lua.LValue, rv reflect.Value) error {
 		}
 	}
 	return typeError("uint64", lv)
+}
+
+func (m *Mapper) mapFloat32(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Float32)
+	switch v := lv.(type) {
+	case lua.LNumber:
+		rv.SetFloat(float64(v))
+		return nil
+	case (*lua.LUserData):
+		if f, ok := v.Value.(float32); ok {
+			rv.SetFloat(float64(f))
+			return nil
+		}
+	}
+	return typeError("float32", lv)
+}
+
+func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Float64)
+	switch v := lv.(type) {
+	case lua.LNumber:
+		rv.SetFloat(float64(v))
+		return nil
+	case (*lua.LUserData):
+		if f, ok := v.Value.(float64); ok {
+			rv.SetFloat(f)
+			return nil
+		}
+	}
+	return typeError("float64", lv)
 }
 
 func typeError(expectedTypeName string, lv lua.LValue) error {

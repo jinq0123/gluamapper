@@ -216,6 +216,9 @@ func TestMapInt(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(int(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "int expected but got lua user data of string")
 }
 
 func TestMapInt8(t *testing.T) {
@@ -238,6 +241,9 @@ func TestMapInt8(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(int8(12), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "int8 expected but got lua user data of string")
 }
 
 func TestMapInt16(t *testing.T) {
@@ -260,6 +266,9 @@ func TestMapInt16(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(int16(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "int16 expected but got lua user data of string")
 }
 
 func TestMapInt32(t *testing.T) {
@@ -282,6 +291,9 @@ func TestMapInt32(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(int32(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "int32 expected but got lua user data of string")
 }
 
 func TestMapInt64(t *testing.T) {
@@ -304,6 +316,9 @@ func TestMapInt64(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(int64(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "int64 expected but got lua user data of string")
 }
 
 func TestMapUint(t *testing.T) {
@@ -326,6 +341,9 @@ func TestMapUint(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(uint(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "uint expected but got lua user data of string")
 }
 
 func TestMapUint8(t *testing.T) {
@@ -348,6 +366,9 @@ func TestMapUint8(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(uint8(12), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "uint8 expected but got lua user data of string")
 }
 
 func TestMapUint16(t *testing.T) {
@@ -370,6 +391,9 @@ func TestMapUint16(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(uint16(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "uint16 expected but got lua user data of string")
 }
 
 func TestMapUint32(t *testing.T) {
@@ -392,6 +416,9 @@ func TestMapUint32(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(uint32(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "uint32 expected but got lua user data of string")
 }
 
 func TestMapUint64(t *testing.T) {
@@ -414,4 +441,57 @@ func TestMapUint64(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(uint64(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "uint64 expected but got lua user data of string")
+}
+
+func TestMapFloat32(t *testing.T) {
+	var err error
+	var output float32
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal(float32(0), output)
+	err = Map(lua.LNumber(1234), &output)
+	assert.NoError(err)
+	assert.Equal(float32(1234), output)
+	err = Map(lua.LTrue, &output)
+	assert.Error(err)
+	assert.EqualError(err, "float32 expected but got lua boolean")
+	ud := L.NewUserData()
+	ud.Value = float32(1234)
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(float32(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "float32 expected but got lua user data of string")
+}
+
+func TestMapFloat64(t *testing.T) {
+	var err error
+	var output float64
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal(float64(0), output)
+	err = Map(lua.LNumber(1234), &output)
+	assert.NoError(err)
+	assert.Equal(float64(1234), output)
+	err = Map(lua.LTrue, &output)
+	assert.Error(err)
+	assert.EqualError(err, "float64 expected but got lua boolean")
+	ud := L.NewUserData()
+	ud.Value = float64(1234)
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(float64(1234), output)
+	ud.Value = "abce"
+	err = Map(ud, &output)
+	assert.EqualError(err, "float64 expected but got lua user data of string")
 }
