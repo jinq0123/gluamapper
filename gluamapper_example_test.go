@@ -2,10 +2,11 @@ package gluamapper
 
 import (
 	"fmt"
+
 	"github.com/yuin/gopher-lua"
 )
 
-func ExampleMap() {
+func xExampleMap() {
 	type Role struct {
 		Name string
 	}

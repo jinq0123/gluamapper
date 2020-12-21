@@ -4,105 +4,124 @@ package gluamapper
 import (
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
+	"reflect"
+
+	assert "github.com/arl/assertgo"
 	"github.com/yuin/gopher-lua"
-	"regexp"
-	"strings"
 )
-
-// Option is a configuration that is used to create a new mapper.
-type Option struct {
-	// Function to convert a lua table key to Go's one. This defaults to "ToUpperCamelCase".
-	NameFunc func(string) string
-
-	// Returns error if unused keys exist.
-	ErrorUnused bool
-
-	// A struct tag name for lua table keys . This defaults to "gluamapper"
-	TagName string
-}
 
 // Mapper maps a lua table to a Go struct pointer.
 type Mapper struct {
-	Option Option
+	// A struct tag name for lua table keys.
+	TagName string
 }
 
 // NewMapper returns a new mapper.
-func NewMapper(opt Option) *Mapper {
-	if opt.NameFunc == nil {
-		opt.NameFunc = ToUpperCamelCase
-	}
-	if opt.TagName == "" {
-		opt.TagName = "gluamapper"
-	}
-	return &Mapper{opt}
+func NewMapper() *Mapper {
+	return &Mapper{}
 }
 
-// Map maps the lua table to the given struct pointer.
-func (mapper *Mapper) Map(tbl *lua.LTable, st interface{}) error {
-	opt := mapper.Option
-	mp, ok := ToGoValue(tbl, opt).(map[interface{}]interface{})
-	if !ok {
-		return errors.New("arguments #1 must be a table, but got an array")
+// Map maps the lua value to the given go pointer with default options.
+func Map(lv lua.LValue, output interface{}) error {
+	return NewMapper().Map(lv, output)
+}
+
+// Map maps the lua value to the given go pointer.
+func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
+	rv := reflect.ValueOf(output)
+	if rv.Kind() != reflect.Ptr {
+		return errors.New("output must be a pointer")
 	}
-	config := &mapstructure.DecoderConfig{
-		WeaklyTypedInput: true,
-		Result:           st,
-		TagName:          opt.TagName,
-		ErrorUnused:      opt.ErrorUnused,
+	return m.MapValue(lv, rv.Elem())
+}
+
+func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
+	/* if _, ok := lv.(*lua.LNilType); ok {
+		// fmt.Println("lua value is nil")
+		return nil
+	} */
+
+	TBI := errors.New("to be implemented")
+	switch rv.Kind() {
+	case reflect.Bool:
+		return m.mapBool(lv, rv)
+	case reflect.Int:
+		return TBI
+	case reflect.Int8:
+		return TBI
+	case reflect.Int16:
+		return TBI
+	case reflect.Int32:
+		return TBI
+	case reflect.Int64:
+		return TBI
+	case reflect.Uint:
+		return TBI
+	case reflect.Uint8:
+		return TBI
+	case reflect.Uint16:
+		return TBI
+	case reflect.Uint32:
+		return TBI
+	case reflect.Uint64:
+		return TBI
+	case reflect.Uintptr:
+		return TBI
+	case reflect.Float32:
+		return TBI
+	case reflect.Float64:
+		return TBI
+	case reflect.Complex64:
+		return TBI
+	case reflect.Complex128:
+		return TBI
+	case reflect.Array:
+		return TBI
+	case reflect.Chan:
+		return TBI
+	case reflect.Func:
+		return TBI
+	case reflect.Interface:
+		return TBI
+	case reflect.Map:
+		return TBI
+	case reflect.Ptr:
+		return TBI
+	case reflect.Slice:
+		return TBI
+	case reflect.String:
+		return TBI
+	case reflect.Struct:
+		return TBI
+	case reflect.UnsafePointer:
+		return TBI
 	}
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return err
-	}
-	return decoder.Decode(mp)
+	return fmt.Errorf("unsupported type: %s", rv.Kind())
 }
 
-// Map maps the lua table to the given struct pointer with default options.
-func Map(tbl *lua.LTable, st interface{}) error {
-	return NewMapper(Option{}).Map(tbl, st)
-}
-
-
-// Id is an Option.NameFunc that returns given string as-is.
-func Id(s string) string {
-	return s
-}
-
-var camelre = regexp.MustCompile(`_([a-z])`)
-// ToUpperCamelCase is an Option.NameFunc that converts strings from snake case to upper camel case.
-func ToUpperCamelCase(s string) string {
-	return strings.ToUpper(string(s[0])) + camelre.ReplaceAllStringFunc(s[1:len(s)], func(s string) string { return strings.ToUpper(s[1:len(s)]) })
-}
-
-// ToGoValue converts the given LValue to a Go object.
-func ToGoValue(lv lua.LValue, opt Option) interface{} {
+func (m *Mapper) mapBool(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Bool)
 	switch v := lv.(type) {
 	case *lua.LNilType:
+		rv.SetBool(false)
 		return nil
 	case lua.LBool:
-		return bool(v)
-	case lua.LString:
-		return string(v)
-	case lua.LNumber:
-		return float64(v)
-	case *lua.LTable:
-		maxn := v.MaxN()
-		if maxn == 0 { // table
-			ret := make(map[interface{}]interface{})
-			v.ForEach(func(key, value lua.LValue) {
-				keystr := fmt.Sprint(ToGoValue(key, opt))
-				ret[opt.NameFunc(keystr)] = ToGoValue(value, opt)
-			})
-			return ret
-		} else { // array
-			ret := make([]interface{}, 0, maxn)
-			for i := 1; i <= maxn; i++ {
-				ret = append(ret, ToGoValue(v.RawGetInt(i), opt))
-			}
-			return ret
+		rv.SetBool(bool(v))
+		return nil
+	case (*lua.LUserData):
+		if b, ok := v.Value.(bool); ok {
+			rv.SetBool(b)
+			return nil
 		}
-	default:
-		return v
 	}
+	return typeError("bool", lv)
+}
+
+func typeError(expectedTypeName string, lv lua.LValue) error {
+	if ud, ok := lv.(*lua.LUserData); ok {
+		val := reflect.ValueOf(ud.Value)
+		typ := reflect.Indirect(val).Type()
+		return fmt.Errorf("%s expected but got lua user data of %s", expectedTypeName, typ)
+	}
+	return fmt.Errorf("%s expected but got lua %s", expectedTypeName, lv.Type())
 }

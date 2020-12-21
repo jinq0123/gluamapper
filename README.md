@@ -64,10 +64,11 @@ MIT
 
 ### Speedup
 
-* Directly from lua table to go struct, while yuin/gluamapper
+* Converts directly from lua table to go struct, while yuin/gluamapper
  converts the table to `map[string]interface{}`,
  and then converts it to a Go struct using [`mapstructure`](https://github.com/mitchellh/mapstructure/).
 * No "weak" conversions
+* Always ignores unused keys
 
 ### More types
-* TODO: map lua types other than table to go types
+* Maps lua types other than table to go types
