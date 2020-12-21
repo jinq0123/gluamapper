@@ -20,7 +20,6 @@ See [Go doc](https://pkg.go.dev/github.com/jinq0123/gluamapper).
 ## Usage
 
 ```go
-
     type Role struct {
         Name string
     }
