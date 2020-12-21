@@ -5,9 +5,6 @@
 
 gluamapper provides an easy way to map GopherLua tables to Go structs.
 
-gluamapper converts a GopherLua table to `map[string]interface{}`,
- and then converts it to a Go struct using [`mapstructure`](https://github.com/mitchellh/mapstructure/).
- 
 ## Installation
 
 ```bash
@@ -61,3 +58,16 @@ MIT
 
 ## Author
 * Yusuke Inuzuka
+* Jin Qing
+
+## Differences from [yuin/gluamapper](https://github.com/yuin/gluamapper)
+
+### Speedup
+
+* Directly from lua table to go struct, while yuin/gluamapper
+ converts the table to `map[string]interface{}`,
+ and then converts it to a Go struct using [`mapstructure`](https://github.com/mitchellh/mapstructure/).
+* No "weak" conversions
+
+### More types
+* TODO: map lua types other than table to go types
