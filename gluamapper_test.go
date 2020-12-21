@@ -129,15 +129,14 @@ func TestError(t *testing.T) {
 	tbl := L.NewTable()
 	L.SetField(tbl, "key", lua.LString("value"))
 	err := Map(tbl, 1)
-	assert.Error(err)
-	assert.Equal("output must be a pointer", err.Error())
+	assert.EqualError(err, "output must be a pointer")
 
 	tbl = L.NewTable()
 	tbl.Append(lua.LNumber(1))
 	var person testPerson
 	err = Map(tbl, &person)
 	assert.Error(err)
-	// TOFIX: assert.Equal("arguments #1 must be a table, but got an array", err.Error())
+	// TOFIX: assert.EqualError(err, "arguments #1 must be a table, but got an array")
 }
 
 func TestMapBool(t *testing.T) {
@@ -156,8 +155,7 @@ func TestMapBool(t *testing.T) {
 	assert.Equal(false, output)
 	L.SetGlobal("goInt", lua.LNumber(12345))
 	err = Map(L.GetGlobal("goInt"), &output)
-	assert.Error(err)
-	assert.Equal("bool expected but got lua number", err.Error())
+	assert.EqualError(err, "bool expected but got lua number")
 	L.SetGlobal("goNil", lua.LNil)
 	err = Map(L.GetGlobal("goNil"), &output)
 	assert.NoError(err)
@@ -165,13 +163,15 @@ func TestMapBool(t *testing.T) {
 	goSt := struct{ a int }{a: 1234}
 	L.SetGlobal("goSt", luar.New(L, &goSt))
 	err = Map(L.GetGlobal("goSt"), &output)
-	assert.Error(err)
-	assert.Equal("bool expected but got lua user data of struct { a int }", err.Error())
+	assert.EqualError(err, "bool expected but got lua user data of struct { a int }")
 	ud := L.NewUserData()
 	ud.Value = true
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(true, output)
+	ud.Value = 1234
+	err = Map(ud, &output)
+	assert.EqualError(err, "bool expected but got lua user data of int")
 
 	err = L.DoString(`
 		luaTrue = true
@@ -187,8 +187,7 @@ func TestMapBool(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(false, output)
 	err = Map(L.GetGlobal("luaInt"), &output)
-	assert.Error(err)
-	assert.Equal("bool expected but got lua number", err.Error())
+	assert.EqualError(err, "bool expected but got lua number")
 	err = Map(L.GetGlobal("luaNil"), &output)
 	assert.NoError(err)
 	assert.Equal(false, output)
@@ -305,4 +304,114 @@ func TestMapInt64(t *testing.T) {
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(int64(1234), output)
+}
+
+func TestMapUint(t *testing.T) {
+	var err error
+	var output uint
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal(uint(0), output)
+	err = Map(lua.LNumber(1234), &output)
+	assert.NoError(err)
+	assert.Equal(uint(1234), output)
+	err = Map(lua.LTrue, &output)
+	assert.Error(err)
+	assert.EqualError(err, "uint expected but got lua boolean")
+	ud := L.NewUserData()
+	ud.Value = uint(1234)
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(uint(1234), output)
+}
+
+func TestMapUint8(t *testing.T) {
+	var err error
+	var output uint8
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal(uint8(0), output)
+	err = Map(lua.LNumber(12), &output)
+	assert.NoError(err)
+	assert.Equal(uint8(12), output)
+	err = Map(lua.LTrue, &output)
+	assert.Error(err)
+	assert.EqualError(err, "uint8 expected but got lua boolean")
+	ud := L.NewUserData()
+	ud.Value = uint8(12)
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(uint8(12), output)
+}
+
+func TestMapUint16(t *testing.T) {
+	var err error
+	var output uint16
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal(uint16(0), output)
+	err = Map(lua.LNumber(1234), &output)
+	assert.NoError(err)
+	assert.Equal(uint16(1234), output)
+	err = Map(lua.LTrue, &output)
+	assert.Error(err)
+	assert.EqualError(err, "uint16 expected but got lua boolean")
+	ud := L.NewUserData()
+	ud.Value = uint16(1234)
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(uint16(1234), output)
+}
+
+func TestMapUint32(t *testing.T) {
+	var err error
+	var output uint32
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal(uint32(0), output)
+	err = Map(lua.LNumber(1234), &output)
+	assert.NoError(err)
+	assert.Equal(uint32(1234), output)
+	err = Map(lua.LTrue, &output)
+	assert.Error(err)
+	assert.EqualError(err, "uint32 expected but got lua boolean")
+	ud := L.NewUserData()
+	ud.Value = uint32(1234)
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(uint32(1234), output)
+}
+
+func TestMapUint64(t *testing.T) {
+	var err error
+	var output uint64
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal(uint64(0), output)
+	err = Map(lua.LNumber(1234), &output)
+	assert.NoError(err)
+	assert.Equal(uint64(1234), output)
+	err = Map(lua.LTrue, &output)
+	assert.Error(err)
+	assert.EqualError(err, "uint64 expected but got lua boolean")
+	ud := L.NewUserData()
+	ud.Value = uint64(1234)
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(uint64(1234), output)
 }
