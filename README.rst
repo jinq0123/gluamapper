@@ -2,11 +2,11 @@
 gluamapper: maps a GopherLua table to a Go struct
 ===============================================================================
 
-.. image:: https://godoc.org/github.com/yuin/gluamapper?status.svg
-    :target: http://godoc.org/github.com/yuin/gluamapper
+.. image:: https://godoc.org/github.com/jinq0123/gluamapper?status.svg
+    :target: http://godoc.org/github.com/jinq0123/gluamapper
 
-.. image:: https://travis-ci.org/yuin/gluamapper.svg
-    :target: https://travis-ci.org/yuin/gluamapper
+.. image:: https://travis-ci.org/jinq0123/gluamapper.svg
+    :target: https://travis-ci.org/jinq0123/gluamapper
 
 |
 
@@ -20,12 +20,12 @@ Installation
 
 .. code-block:: bash
    
-   go get github.com/yuin/gluamapper
+   go get github.com/jinq0123/gluamapper
 
 ----------------------------------------------------------------
 API
 ----------------------------------------------------------------
-See `Go doc <http://godoc.org/github.com/yuin/gluamapper>`_ .
+See `Go doc <http://godoc.org/github.com/jinq0123/gluamapper>`_ .
 
 ----------------------------------------------------------------
 Usage

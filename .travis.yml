@@ -6,7 +6,7 @@ go:
 
 install:
   - go get github.com/mitchellh/mapstructure
-  - go get github.com/yuin/gopher-lua
+  - go get github.com/jinq0123/gopher-lua
 
 script:
  - go test -v

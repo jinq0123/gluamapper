@@ -1,7 +1,7 @@
 package gluamapper
 
 import (
-	"github.com/yuin/gopher-lua"
+	"github.com/jinq0123/gopher-lua"
 	"path/filepath"
 	"runtime"
 	"testing"
