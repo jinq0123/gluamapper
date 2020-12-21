@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"github.com/jinq0123/gopher-lua"
+	"github.com/yuin/gopher-lua"
 	"regexp"
 	"strings"
 )
