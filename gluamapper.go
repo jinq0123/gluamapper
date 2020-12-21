@@ -36,25 +36,24 @@ func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 }
 
 func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
-	/* if _, ok := lv.(*lua.LNilType); ok {
-		// fmt.Println("lua value is nil")
+	if _, ok := lv.(*lua.LNilType); ok {
 		return nil
-	} */
+	}
 
 	TBI := errors.New("to be implemented")
 	switch rv.Kind() {
 	case reflect.Bool:
 		return m.mapBool(lv, rv)
 	case reflect.Int:
-		return TBI
+		return m.mapInt(lv, rv)
 	case reflect.Int8:
-		return TBI
+		return m.mapInt8(lv, rv)
 	case reflect.Int16:
-		return TBI
+		return m.mapInt16(lv, rv)
 	case reflect.Int32:
-		return TBI
+		return m.mapInt32(lv, rv)
 	case reflect.Int64:
-		return TBI
+		return m.mapInt64(lv, rv)
 	case reflect.Uint:
 		return TBI
 	case reflect.Uint8:
@@ -102,9 +101,6 @@ func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
 func (m *Mapper) mapBool(lv lua.LValue, rv reflect.Value) error {
 	assert.True(rv.Kind() == reflect.Bool)
 	switch v := lv.(type) {
-	case *lua.LNilType:
-		rv.SetBool(false)
-		return nil
 	case lua.LBool:
 		rv.SetBool(bool(v))
 		return nil
@@ -115,6 +111,81 @@ func (m *Mapper) mapBool(lv lua.LValue, rv reflect.Value) error {
 		}
 	}
 	return typeError("bool", lv)
+}
+
+func (m *Mapper) mapInt(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Int)
+	switch v := lv.(type) {
+	case lua.LNumber:
+		rv.SetInt(int64(v))
+		return nil
+	case (*lua.LUserData):
+		if n, ok := v.Value.(int); ok {
+			rv.SetInt(int64(n))
+			return nil
+		}
+	}
+	return typeError("int", lv)
+}
+
+func (m *Mapper) mapInt8(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Int8)
+	switch v := lv.(type) {
+	case lua.LNumber:
+		rv.SetInt(int64(v))
+		return nil
+	case (*lua.LUserData):
+		if n, ok := v.Value.(int8); ok {
+			rv.SetInt(int64(n))
+			return nil
+		}
+	}
+	return typeError("int8", lv)
+}
+
+func (m *Mapper) mapInt16(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Int16)
+	switch v := lv.(type) {
+	case lua.LNumber:
+		rv.SetInt(int64(v))
+		return nil
+	case (*lua.LUserData):
+		if n, ok := v.Value.(int16); ok {
+			rv.SetInt(int64(n))
+			return nil
+		}
+	}
+	return typeError("int16", lv)
+}
+
+func (m *Mapper) mapInt32(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Int32)
+	switch v := lv.(type) {
+	case lua.LNumber:
+		rv.SetInt(int64(v))
+		return nil
+	case (*lua.LUserData):
+		if n, ok := v.Value.(int32); ok {
+			rv.SetInt(int64(n))
+			return nil
+		}
+	}
+	return typeError("int32", lv)
+}
+
+func (m *Mapper) mapInt64(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Int64)
+	switch v := lv.(type) {
+	case lua.LNumber:
+		rv.SetInt(int64(v))
+		return nil
+	case (*lua.LUserData):
+		if n, ok := v.Value.(int64); ok {
+			rv.SetInt(int64(n))
+			return nil
+		}
+	}
+	return typeError("int64", lv)
 }
 
 func typeError(expectedTypeName string, lv lua.LValue) error {
