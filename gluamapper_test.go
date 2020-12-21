@@ -495,3 +495,31 @@ func TestMapFloat64(t *testing.T) {
 	err = Map(ud, &output)
 	assert.EqualError(err, "float64 expected but got lua user data of string")
 }
+
+func TestMapSlice(t *testing.T) {
+	var err error
+	var output []int
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = L.DoString(`t = {1,2,3}`)
+	assert.NoError(err)
+	tbl := L.GetGlobal("t")
+	err = Map(tbl, &output)
+	assert.NoError(err)
+	assert.Equal([]int{1, 2, 3}, output)
+	output = nil
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Nil(output)
+
+	goSlice := []int{1, 2, 3}
+	ud := L.NewUserData()
+	ud.Value = goSlice
+	output = nil
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(goSlice, output)
+
+	// TOOD: goArray :=
+}

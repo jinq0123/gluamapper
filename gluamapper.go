@@ -22,11 +22,13 @@ func NewMapper() *Mapper {
 }
 
 // Map maps the lua value to the given go pointer with default options.
+// Please reset output before Map()
 func Map(lv lua.LValue, output interface{}) error {
 	return NewMapper().Map(lv, output)
 }
 
 // Map maps the lua value to the given go pointer.
+// Please reset output before Map()
 func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 	rv := reflect.ValueOf(output)
 	if rv.Kind() != reflect.Ptr {
@@ -35,9 +37,11 @@ func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 	return m.MapValue(lv, rv.Elem())
 }
 
+// MapValue maps the lua value to go value.
+// Please reset go value before MapValue()
 func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
 	if _, ok := lv.(*lua.LNilType); ok {
-		return nil
+		return nil // keep the old value
 	}
 
 	TBI := errors.New("to be implemented")
@@ -85,9 +89,9 @@ func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
 	case reflect.Map:
 		return TBI
 	case reflect.Ptr:
-		return TBI
+		return m.mapPtr(lv, rv)
 	case reflect.Slice:
-		return TBI
+		return m.mapSlice(lv, rv)
 	case reflect.String:
 		return TBI
 	case reflect.Struct:
@@ -291,6 +295,40 @@ func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
 		}
 	}
 	return typeError("float64", lv)
+}
+
+func (m *Mapper) mapPtr(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Ptr)
+	rv.Set(reflect.New(rv.Type().Elem()))
+	return m.MapValue(lv, rv.Elem())
+}
+
+func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
+	assert.True(rv.Kind() == reflect.Slice)
+	switch v := lv.(type) {
+	case *lua.LTable:
+		// Make a new slice and copy each element.
+		tblLen := v.Len()
+		rv.Set(reflect.MakeSlice(rv.Type(), tblLen, tblLen))
+		for i := 0; i < tblLen; i++ {
+			if err := m.MapValue(v.RawGetInt(i+1), rv.Index(i)); err != nil {
+				return err
+			}
+		}
+		return nil
+	case (*lua.LUserData):
+		// v.Value must be a slice of the same type
+		udValType := reflect.TypeOf(v.Value)
+		if udValType.Kind() != reflect.Slice { // TODO: is Array OK?
+			return typeError("slice", lv)
+		}
+		if udValType.Elem() != rv.Type().Elem() {
+			return fmt.Errorf("[]%s expected but got lua user data of []%s", rv.Type().Elem(), udValType.Elem())
+		}
+		rv.Set(reflect.ValueOf(v.Value))
+		return nil
+	}
+	return typeError("slice", lv)
 }
 
 func typeError(expectedTypeName string, lv lua.LValue) error {
