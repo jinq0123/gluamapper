@@ -9,4 +9,4 @@ install:
   - go get github.com/yuin/gopher-lua
 
 script:
- - go test -v
+ - go test -v -race

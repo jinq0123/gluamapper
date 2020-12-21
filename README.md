@@ -1,37 +1,25 @@
-===============================================================================
-gluamapper: maps a GopherLua table to a Go struct
-===============================================================================
+# gluamapper: maps a GopherLua table to a Go struct
 
-.. image:: https://godoc.org/github.com/jinq0123/gluamapper?status.svg
-    :target: http://godoc.org/github.com/jinq0123/gluamapper
-
-.. image:: https://travis-ci.org/jinq0123/gluamapper.svg
-    :target: https://travis-ci.org/jinq0123/gluamapper
-
-|
+[![Build Status](https://travis-ci.org/jinq0123/gluamapper.svg)](https://travis-ci.org/jinq0123/gluamapper)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/jinq0123/gluamapper)](https://pkg.go.dev/github.com/jinq0123/gluamapper)
 
 gluamapper provides an easy way to map GopherLua tables to Go structs.
 
-gluamapper converts a GopherLua table to ``map[string]interface{}`` , and then converts it to a Go struct using `mapstructure <https://github.com/mitchellh/mapstructure/>`_ .
+gluamapper converts a GopherLua table to `map[string]interface{}`,
+ and then converts it to a Go struct using [`mapstructure`](https://github.com/mitchellh/mapstructure/).
  
-----------------------------------------------------------------
-Installation
-----------------------------------------------------------------
+## Installation
 
-.. code-block:: bash
-   
-   go get github.com/jinq0123/gluamapper
+```bash
+go get github.com/jinq0123/gluamapper
+```
 
-----------------------------------------------------------------
-API
-----------------------------------------------------------------
-See `Go doc <http://godoc.org/github.com/jinq0123/gluamapper>`_ .
+## API
+See [Go doc](https://pkg.go.dev/github.com/jinq0123/gluamapper).
 
-----------------------------------------------------------------
-Usage
-----------------------------------------------------------------
+## Usage
 
-.. code-block:: go
+```go
 
     type Role struct {
         Name string
@@ -67,13 +55,10 @@ Usage
         panic(err)
     }
     fmt.Printf("%s %d", person.Name, person.Age)
+```
 
-----------------------------------------------------------------
-License
-----------------------------------------------------------------
+## License
 MIT
 
-----------------------------------------------------------------
-Author
-----------------------------------------------------------------
-Yusuke Inuzuka
+## Author
+* Yusuke Inuzuka
