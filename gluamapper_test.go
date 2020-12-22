@@ -474,8 +474,13 @@ func TestMapSlice(t *testing.T) {
 	assert.NoError(err)
 	assert.Nil(output)
 
-	goSlice := []int{1, 2, 3}
 	ud := L.NewUserData()
+	output = []int{1, 2, 3}
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Nil(output)
+
+	goSlice := []int{1, 2, 3}
 	ud.Value = goSlice
 	output = nil
 	err = Map(ud, &output)
@@ -539,4 +544,41 @@ func TestMapStruct(t *testing.T) {
 	ud.Value = nil
 	err = Map(ud, &output)
 	assert.EqualError(err, "gluamapper.testPerson expected but got lua user data of nil")
+
+	ud.Value = testPerson{Name: "name"}
+	output.Name = ""
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal("name", output.Name)
+
+	ud.Value = &testPerson{}
+	err = Map(ud, &output)
+	assert.EqualError(err, "gluamapper.testPerson expected but got lua user data of *gluamapper.testPerson")
+}
+
+func TestMapPtr(t *testing.T) {
+	var err error
+	var output *int
+	assert := require.New(t)
+
+	err = Map(lua.LNumber(123), &output)
+	assert.NoError(err)
+	assert.Equal(123, *output)
+
+	L := lua.NewState()
+	ud := L.NewUserData()
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Nil(output)
+
+	n := 123
+	ud.Value = &n
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(&n, output)
+
+	f := 123.0
+	ud.Value = &f
+	err = Map(ud, &output)
+	assert.EqualError(err, "*int expected but got lua user data of *float64")
 }

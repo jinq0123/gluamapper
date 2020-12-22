@@ -304,6 +304,9 @@ func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
 func (m *Mapper) mapPtr(lv lua.LValue, rv reflect.Value) error {
 	assert.True(lv != lua.LNil)
 	assert.True(rv.Kind() == reflect.Ptr)
+	if ud, ok := lv.(*lua.LUserData); ok {
+		return m.mapLuaUserDataToGoValue(ud, rv)
+	}
 	rv.Set(reflect.New(rv.Type().Elem()))
 	return m.mapNonNilValue(lv, rv.Elem())
 }
@@ -328,11 +331,16 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 }
 
 func (m *Mapper) mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {
-	// must be the same type
 	udValue := ud.Value
 	if udValue == nil {
+		if canBeNil(rv) {
+			rv.Set(reflect.Zero(rv.Type()))
+			return nil
+		}
 		return fmt.Errorf("%s expected but got lua user data of nil", rv.Type())
 	}
+
+	// must be the same type
 	udValType := reflect.TypeOf(udValue)
 	if udValType != rv.Type() {
 		return fmt.Errorf("%s expected but got lua user data of %s", rv.Type(), udValType)
@@ -397,4 +405,20 @@ func typeError(expectedTypeName string, lv lua.LValue) error {
 	val := reflect.ValueOf(ud.Value)
 	typ := reflect.Indirect(val).Type()
 	return fmt.Errorf("%s expected but got lua user data of %s", expectedTypeName, typ)
+}
+
+// canBeNil reports whether its argument v can be nil.
+// The nilable argument must be a chan, func, interface, map, pointer, or slice value.
+func canBeNil(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Chan,
+		reflect.Func,
+		reflect.Map,
+		reflect.Ptr,
+		reflect.UnsafePointer,
+		reflect.Interface,
+		reflect.Slice:
+		return true
+	}
+	return false
 }
