@@ -40,10 +40,14 @@ func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 // MapValue maps the lua value to go value.
 // Please reset go value before MapValue()
 func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
-	if _, ok := lv.(*lua.LNilType); ok {
+	if lv == lua.LNil {
 		return nil // keep the old value
 	}
+	return m.mapNonNilValue(lv, rv)
+}
 
+func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
+	assert.True(lv != lua.LNil) // lv is not *lua.LNilType
 	TBI := errors.New("to be implemented")
 	switch rv.Kind() {
 	case reflect.Bool:
@@ -298,9 +302,10 @@ func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
 }
 
 func (m *Mapper) mapPtr(lv lua.LValue, rv reflect.Value) error {
+	assert.True(lv != lua.LNil)
 	assert.True(rv.Kind() == reflect.Ptr)
 	rv.Set(reflect.New(rv.Type().Elem()))
-	return m.MapValue(lv, rv.Elem())
+	return m.mapNonNilValue(lv, rv.Elem())
 }
 
 func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
