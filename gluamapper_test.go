@@ -500,7 +500,7 @@ func TestMapSlice(t *testing.T) {
 	assert.EqualError(err, "[]int expected but got lua user data of []float32")
 
 	err = Map(lua.LTrue, &output)
-	assert.EqualError(err, "slice expected but got lua boolean")
+	assert.EqualError(err, "[]int expected but got lua boolean")
 }
 
 func TestMapString(t *testing.T) {
@@ -574,6 +574,34 @@ func TestMapStructWithUnexportedField(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(123, output.Aa)
 	assert.Equal(456, output.bb) // unexported field
+}
+
+func TestMapInterface(t *testing.T) {
+	var err error
+	var output interface{}
+	assert := require.New(t)
+
+	L := lua.NewState()
+	err = L.DoString(`input = 234`)
+	assert.NoError(err)
+	err = Map(L.GetGlobal("input"), &output)
+	assert.NoError(err)
+	assert.Equal(float64(234), output)
+	// XXX
+}
+
+func TestMapMap(t *testing.T) {
+	var err error
+	var output map[int]int
+	assert := require.New(t)
+
+	L := lua.NewState()
+	err = L.DoString(`input = {abc = 123}`)
+	assert.NoError(err)
+	err = Map(L.GetGlobal("input"), &output)
+	assert.NoError(err)
+	assert.Equal(0, len(output))
+	// XXX
 }
 
 func TestMapPtr(t *testing.T) {

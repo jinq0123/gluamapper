@@ -91,7 +91,7 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 	case reflect.Interface:
 		return m.mapInterface(lv, rv)
 	case reflect.Map:
-		return TBI
+		return m.mapMap(lv, rv)
 	case reflect.Ptr:
 		return m.mapPtr(lv, rv)
 	case reflect.Slice:
@@ -118,7 +118,7 @@ func (m *Mapper) mapBool(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("bool", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapInt(lv lua.LValue, rv reflect.Value) error {
@@ -133,7 +133,7 @@ func (m *Mapper) mapInt(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("int", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapInt8(lv lua.LValue, rv reflect.Value) error {
@@ -148,7 +148,7 @@ func (m *Mapper) mapInt8(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("int8", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapInt16(lv lua.LValue, rv reflect.Value) error {
@@ -163,7 +163,7 @@ func (m *Mapper) mapInt16(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("int16", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapInt32(lv lua.LValue, rv reflect.Value) error {
@@ -178,7 +178,7 @@ func (m *Mapper) mapInt32(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("int32", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapInt64(lv lua.LValue, rv reflect.Value) error {
@@ -193,7 +193,7 @@ func (m *Mapper) mapInt64(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("int64", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapUint(lv lua.LValue, rv reflect.Value) error {
@@ -208,7 +208,7 @@ func (m *Mapper) mapUint(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("uint", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapUint8(lv lua.LValue, rv reflect.Value) error {
@@ -223,7 +223,7 @@ func (m *Mapper) mapUint8(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("uint8", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapUint16(lv lua.LValue, rv reflect.Value) error {
@@ -238,7 +238,7 @@ func (m *Mapper) mapUint16(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("uint16", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapUint32(lv lua.LValue, rv reflect.Value) error {
@@ -253,7 +253,7 @@ func (m *Mapper) mapUint32(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("uint32", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapUint64(lv lua.LValue, rv reflect.Value) error {
@@ -268,7 +268,7 @@ func (m *Mapper) mapUint64(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("uint64", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapFloat32(lv lua.LValue, rv reflect.Value) error {
@@ -283,7 +283,7 @@ func (m *Mapper) mapFloat32(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("float32", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
@@ -298,7 +298,7 @@ func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("float64", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapInterface(lv lua.LValue, rv reflect.Value) error {
@@ -306,11 +306,11 @@ func (m *Mapper) mapInterface(lv lua.LValue, rv reflect.Value) error {
 	assert.True(rv.Kind() == reflect.Interface)
 	switch v := lv.(type) {
 	case lua.LBool:
-		rv.SetBool(bool(v))
+		rv.Set(reflect.ValueOf(bool(v)))
 	case lua.LNumber:
-		rv.SetFloat(float64(v))
+		rv.Set(reflect.ValueOf(float64(v)))
 	case lua.LString:
-		rv.SetString(string(v))
+		rv.Set(reflect.ValueOf(string(v)))
 	case *lua.LFunction:
 		// ignore
 	case *lua.LUserData:
@@ -322,6 +322,18 @@ func (m *Mapper) mapInterface(lv lua.LValue, rv reflect.Value) error {
 		// ignore
 	}
 	return nil
+}
+
+func (m *Mapper) mapMap(lv lua.LValue, rv reflect.Value) error {
+	assert.True(lv != lua.LNil)
+	assert.True(rv.Kind() == reflect.Map)
+	switch v := lv.(type) {
+	case *lua.LTable:
+		return m.mapLuaTableToGoMap(v, rv)
+	case *lua.LUserData:
+		return m.mapLuaUserDataToGoValue(v, rv)
+	}
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapPtr(lv lua.LValue, rv reflect.Value) error {
@@ -345,7 +357,7 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 	case *lua.LUserData:
 		return m.mapLuaUserDataToGoValue(v, rv)
 	}
-	return typeError("slice", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapLuaTableToGoSlice(tbl *lua.LTable, rv reflect.Value) error {
@@ -368,13 +380,21 @@ func (m *Mapper) mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) er
 			rv.Set(reflect.Zero(rv.Type()))
 			return nil
 		}
-		return fmt.Errorf("%s expected but got lua user data of nil", rv.Type())
+		return &typeError{
+			goType:                rv.Type(),
+			luaType:               lua.LTUserData,
+			isLuaUserDataValueNil: true,
+		}
 	}
 
 	// must be the same type
 	udValType := reflect.TypeOf(udValue)
 	if udValType != rv.Type() {
-		return fmt.Errorf("%s expected but got lua user data of %s", rv.Type(), udValType)
+		return &typeError{
+			goType:               rv.Type(),
+			luaType:              lua.LTUserData,
+			luaUserDataValueType: udValType,
+		}
 	}
 	rv.Set(reflect.ValueOf(udValue))
 	return nil
@@ -393,7 +413,7 @@ func (m *Mapper) mapString(lv lua.LValue, rv reflect.Value) error {
 			return nil
 		}
 	}
-	return typeError("string", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapStruct(lv lua.LValue, rv reflect.Value) error {
@@ -405,7 +425,7 @@ func (m *Mapper) mapStruct(lv lua.LValue, rv reflect.Value) error {
 	case *lua.LUserData:
 		return m.mapLuaUserDataToGoValue(v, rv)
 	}
-	return typeError("struct", lv)
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapLuaTableToGoStruct(tbl *lua.LTable, rv reflect.Value) error {
@@ -440,32 +460,23 @@ func (m *Mapper) mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) err
 func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
 	assert.True(tbl != nil)
 	assert.True(rv.Kind() == reflect.Map)
+	mapType := rv.Type()
+	keyType := mapType.Key()
+	elemType := mapType.Elem()
 	tbl.ForEach(func(lKey, lVal lua.LValue) {
-		var goKey interface{}
-		if err := m.MapValue(lKey, reflect.ValueOf(&goKey).Elem()); err != nil {
+		rvKeyPtr := reflect.New(keyType) // rvKeyPtr is a pointer to a new zero key
+		rvKey := rvKeyPtr.Elem()
+		if err := m.MapValue(lKey, rvKeyPtr.Elem()); err != nil { // TODO: MapValue() 应该只返回bool, 不要创建 error
 			return // skip field if error
 		}
-		var goVal interface{}
-		if err := m.MapValue(lVal, reflect.ValueOf(&goVal).Elem()); err != nil {
+		rvElemPtr := reflect.New(elemType)
+		rvElem := rvElemPtr.Elem()
+		if err := m.MapValue(lVal, rvElemPtr.Elem()); err != nil {
 			return // skip field if error
 		}
-		rv.SetMapIndex(reflect.ValueOf(goKey), reflect.ValueOf(goVal))
+		rv.SetMapIndex(rvKey, rvElem)
 	})
 	return nil
-}
-
-func typeError(expectedTypeName string, lv lua.LValue) error {
-	ud, ok := lv.(*lua.LUserData)
-	if !ok {
-		return fmt.Errorf("%s expected but got lua %s", expectedTypeName, lv.Type())
-	}
-	if ud.Value == nil {
-		return fmt.Errorf("%s expected but got lua user data of nil", expectedTypeName)
-	}
-
-	val := reflect.ValueOf(ud.Value)
-	typ := reflect.Indirect(val).Type()
-	return fmt.Errorf("%s expected but got lua user data of %s", expectedTypeName, typ)
 }
 
 // canBeNil reports whether its argument v can be nil.
