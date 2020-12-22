@@ -312,14 +312,14 @@ func (m *Mapper) mapInterface(lv lua.LValue, rv reflect.Value) error {
 	case lua.LString:
 		rv.Set(reflect.ValueOf(string(v)))
 	case *lua.LFunction:
-		// ignore
+		rv.Set(reflect.ValueOf(v)) // keep as *LFunction
 	case *lua.LUserData:
 		return m.mapLuaUserDataToGoValue(v, rv)
 	// case *lua.LTThread: no such type
 	case *lua.LTable:
 		return m.mapLuaTableToGoInterface(v, rv)
 	case *lua.LChannel:
-		// ignore
+		rv.Set(reflect.ValueOf(v)) // keep as *LChannel
 	}
 	return nil
 }
@@ -342,8 +342,12 @@ func (m *Mapper) mapPtr(lv lua.LValue, rv reflect.Value) error {
 	if ud, ok := lv.(*lua.LUserData); ok {
 		return m.mapLuaUserDataToGoValue(ud, rv)
 	}
-	rv.Set(reflect.New(rv.Type().Elem()))
-	return m.mapNonNilValue(lv, rv.Elem())
+	elemPtr := reflect.New(rv.Type().Elem())
+	if err := m.mapNonNilValue(lv, elemPtr.Elem()); err != nil {
+		return err
+	}
+	rv.Set(elemPtr)
+	return nil
 }
 
 func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
@@ -352,8 +356,12 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 	case *lua.LTable:
 		// Make a new slice and copy each element.
 		tblLen := v.Len()
-		rv.Set(reflect.MakeSlice(rv.Type(), tblLen, tblLen))
-		return m.mapLuaTableToGoSlice(v, rv)
+		slice := reflect.MakeSlice(rv.Type(), tblLen, tblLen)
+		if err := m.mapLuaTableToGoSlice(v, slice); err != nil {
+			return err
+		}
+		rv.Set(slice)
+		return nil
 	case *lua.LUserData:
 		return m.mapLuaUserDataToGoValue(v, rv)
 	}
@@ -450,11 +458,19 @@ func (m *Mapper) mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) err
 	assert.True(rv.Kind() == reflect.Interface)
 	maxn := tbl.MaxN()
 	if maxn == 0 { // table -> map[interface{}]interface{}
-		rv.Set(reflect.MakeMap(reflect.TypeOf(map[interface{}]interface{}{})))
-		return m.mapLuaTableToGoMap(tbl, rv)
+		mp := reflect.MakeMap(reflect.TypeOf(map[interface{}]interface{}{}))
+		if err := m.mapLuaTableToGoMap(tbl, mp); err != nil {
+			return err
+		}
+		rv.Set(mp)
+		return nil
 	} else { // array -> []interface{}
-		rv.Set(reflect.MakeSlice(reflect.TypeOf([]interface{}{}), 0, maxn))
-		return m.mapLuaTableToGoSlice(tbl, rv)
+		slc := reflect.MakeSlice(reflect.TypeOf([]interface{}{}), 0, maxn)
+		if err := m.mapLuaTableToGoSlice(tbl, slc); err != nil {
+			return err
+		}
+		rv.Set(slc)
+		return nil
 	}
 }
 

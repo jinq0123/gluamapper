@@ -582,11 +582,29 @@ func TestMapInterface(t *testing.T) {
 	assert := require.New(t)
 
 	L := lua.NewState()
-	err = L.DoString(`input = 234`)
+	err = L.DoString(`
+		n = 234
+		b = true
+		s = "abc"
+		t = {a=1234}
+		f = function() end
+	`)
 	assert.NoError(err)
-	err = Map(L.GetGlobal("input"), &output)
+	err = Map(L.GetGlobal("n"), &output)
 	assert.NoError(err)
 	assert.Equal(float64(234), output)
+	err = Map(L.GetGlobal("b"), &output)
+	assert.NoError(err)
+	assert.Equal(true, output)
+	err = Map(L.GetGlobal("s"), &output)
+	assert.NoError(err)
+	assert.Equal("abc", output)
+	err = Map(L.GetGlobal("t"), &output)
+	assert.NoError(err)
+	assert.Equal(float64(1234), output.(map[interface{}]interface{})["a"])
+	err = Map(L.GetGlobal("f"), &output)
+	assert.NoError(err)
+	// XXX assert.Nil(output)
 	// XXX
 }
 
