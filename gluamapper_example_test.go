@@ -6,7 +6,7 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
-func xExampleMap() {
+func ExampleMap() {
 	type Role struct {
 		Name string
 	}
@@ -21,15 +21,15 @@ func xExampleMap() {
 	L := lua.NewState()
 	if err := L.DoString(`
     person = {
-      name = "Michel",
-      age  = "31", -- weakly input
-      work_place = "San Jose",
-      role = {
+      Name = "Michel",
+      Age  = 31,
+      WorkPlace = "San Jose",
+      Role = {
         {
-          name = "Administrator"
+          Name = "Administrator"
         },
         {
-          name = "Operator"
+          Name = "Operator"
         }
       }
     }

@@ -32,7 +32,7 @@ type testStruct struct {
 	Nil    interface{}
 	Bool   bool
 	String string
-	Number int `gluamapper:"number_value"`
+	Number int
 	Func   interface{}
 }
 
@@ -67,14 +67,14 @@ func TestMap(t *testing.T) {
 	errorIfNotEqual(t, "Operator", person.Role[1].Name)
 }
 
-func xTestTypes(t *testing.T) {
+func TestTypes(t *testing.T) {
 	L := lua.NewState()
 	if err := L.DoString(`
     tbl = {
       ["Nil"] = nil,
       ["Bool"] = true,
       ["String"] = "string",
-      ["Number_value"] = 10,
+      ["Number"] = 10,
       ["Func"] = function() end
     }
 	`); err != nil {

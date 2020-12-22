@@ -89,7 +89,7 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 	case reflect.Func:
 		return TBI
 	case reflect.Interface:
-		return TBI
+		return m.mapInterface(lv, rv)
 	case reflect.Map:
 		return TBI
 	case reflect.Ptr:
@@ -301,6 +301,29 @@ func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
 	return typeError("float64", lv)
 }
 
+func (m *Mapper) mapInterface(lv lua.LValue, rv reflect.Value) error {
+	assert.True(lv != lua.LNil)
+	assert.True(rv.Kind() == reflect.Interface)
+	switch v := lv.(type) {
+	case lua.LBool:
+		rv.SetBool(bool(v))
+	case lua.LNumber:
+		rv.SetFloat(float64(v))
+	case lua.LString:
+		rv.SetString(string(v))
+	case *lua.LFunction:
+		// ignore
+	case *lua.LUserData:
+		return m.mapLuaUserDataToGoValue(v, rv)
+	// case *lua.LTThread: no such type
+	case *lua.LTable:
+		return m.mapLuaTableToGoInterface(v, rv)
+	case *lua.LChannel:
+		// ignore
+	}
+	return nil
+}
+
 func (m *Mapper) mapPtr(lv lua.LValue, rv reflect.Value) error {
 	assert.True(lv != lua.LNil)
 	assert.True(rv.Kind() == reflect.Ptr)
@@ -318,16 +341,24 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 		// Make a new slice and copy each element.
 		tblLen := v.Len()
 		rv.Set(reflect.MakeSlice(rv.Type(), tblLen, tblLen))
-		for i := 0; i < tblLen; i++ {
-			if err := m.MapValue(v.RawGetInt(i+1), rv.Index(i)); err != nil {
-				return err
-			}
-		}
-		return nil
+		return m.mapLuaTableToGoSlice(v, rv)
 	case *lua.LUserData:
 		return m.mapLuaUserDataToGoValue(v, rv)
 	}
 	return typeError("slice", lv)
+}
+
+func (m *Mapper) mapLuaTableToGoSlice(tbl *lua.LTable, rv reflect.Value) error {
+	assert.True(tbl != nil)
+	assert.True(rv.Kind() == reflect.Slice)
+	tblLen := tbl.Len()
+	assert.True(rv.Len() >= tblLen)
+	for i := 0; i < tblLen; i++ {
+		if err := m.MapValue(tbl.RawGetInt(i+1), rv.Index(i)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *Mapper) mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {
@@ -390,6 +421,36 @@ func (m *Mapper) mapLuaTableToGoStruct(tbl *lua.LTable, rv reflect.Value) error 
 			return fmt.Errorf("%s: %w", name, err)
 		}
 	}
+	return nil
+}
+
+func (m *Mapper) mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) error {
+	assert.True(tbl != nil)
+	assert.True(rv.Kind() == reflect.Interface)
+	maxn := tbl.MaxN()
+	if maxn == 0 { // table -> map[interface{}]interface{}
+		rv.Set(reflect.MakeMap(reflect.TypeOf(map[interface{}]interface{}{})))
+		return m.mapLuaTableToGoMap(tbl, rv)
+	} else { // array -> []interface{}
+		rv.Set(reflect.MakeSlice(reflect.TypeOf([]interface{}{}), 0, maxn))
+		return m.mapLuaTableToGoSlice(tbl, rv)
+	}
+}
+
+func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
+	assert.True(tbl != nil)
+	assert.True(rv.Kind() == reflect.Map)
+	tbl.ForEach(func(lKey, lVal lua.LValue) {
+		var goKey interface{}
+		if err := m.MapValue(lKey, reflect.ValueOf(&goKey).Elem()); err != nil {
+			return // skip field if error
+		}
+		var goVal interface{}
+		if err := m.MapValue(lVal, reflect.ValueOf(&goVal).Elem()); err != nil {
+			return // skip field if error
+		}
+		rv.SetMapIndex(reflect.ValueOf(goKey), reflect.ValueOf(goVal))
+	})
 	return nil
 }
 
