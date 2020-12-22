@@ -99,7 +99,7 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 	case reflect.String:
 		return m.mapString(lv, rv)
 	case reflect.Struct:
-		return TBI
+		return m.mapStruct(lv, rv)
 	case reflect.UnsafePointer:
 		return TBI
 	}
@@ -112,7 +112,7 @@ func (m *Mapper) mapBool(lv lua.LValue, rv reflect.Value) error {
 	case lua.LBool:
 		rv.SetBool(bool(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if b, ok := v.Value.(bool); ok {
 			rv.SetBool(b)
 			return nil
@@ -127,7 +127,7 @@ func (m *Mapper) mapInt(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetInt(int64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(int); ok {
 			rv.SetInt(int64(n))
 			return nil
@@ -142,7 +142,7 @@ func (m *Mapper) mapInt8(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetInt(int64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(int8); ok {
 			rv.SetInt(int64(n))
 			return nil
@@ -157,7 +157,7 @@ func (m *Mapper) mapInt16(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetInt(int64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(int16); ok {
 			rv.SetInt(int64(n))
 			return nil
@@ -172,7 +172,7 @@ func (m *Mapper) mapInt32(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetInt(int64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(int32); ok {
 			rv.SetInt(int64(n))
 			return nil
@@ -187,7 +187,7 @@ func (m *Mapper) mapInt64(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetInt(int64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(int64); ok {
 			rv.SetInt(int64(n))
 			return nil
@@ -202,7 +202,7 @@ func (m *Mapper) mapUint(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetUint(uint64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(uint); ok {
 			rv.SetUint(uint64(n))
 			return nil
@@ -217,7 +217,7 @@ func (m *Mapper) mapUint8(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetUint(uint64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(uint8); ok {
 			rv.SetUint(uint64(n))
 			return nil
@@ -232,7 +232,7 @@ func (m *Mapper) mapUint16(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetUint(uint64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(uint16); ok {
 			rv.SetUint(uint64(n))
 			return nil
@@ -247,7 +247,7 @@ func (m *Mapper) mapUint32(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetUint(uint64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(uint32); ok {
 			rv.SetUint(uint64(n))
 			return nil
@@ -262,7 +262,7 @@ func (m *Mapper) mapUint64(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetUint(uint64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if n, ok := v.Value.(uint64); ok {
 			rv.SetUint(uint64(n))
 			return nil
@@ -277,7 +277,7 @@ func (m *Mapper) mapFloat32(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetFloat(float64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if f, ok := v.Value.(float32); ok {
 			rv.SetFloat(float64(f))
 			return nil
@@ -292,7 +292,7 @@ func (m *Mapper) mapFloat64(lv lua.LValue, rv reflect.Value) error {
 	case lua.LNumber:
 		rv.SetFloat(float64(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if f, ok := v.Value.(float64); ok {
 			rv.SetFloat(f)
 			return nil
@@ -321,19 +321,21 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 			}
 		}
 		return nil
-	case (*lua.LUserData):
-		// v.Value must be a slice of the same type
-		udValType := reflect.TypeOf(v.Value)
-		if udValType.Kind() != reflect.Slice { // Array is not acceptable
-			return typeError("slice", lv)
-		}
-		if udValType.Elem() != rv.Type().Elem() {
-			return fmt.Errorf("[]%s expected but got lua user data of []%s", rv.Type().Elem(), udValType.Elem())
-		}
-		rv.Set(reflect.ValueOf(v.Value))
-		return nil
+	case *lua.LUserData:
+		return m.mapLuaUserDataToGoValue(v, rv)
 	}
 	return typeError("slice", lv)
+}
+
+func (m *Mapper) mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {
+	// must be the same type
+	udValue := ud.Value
+	udValType := reflect.TypeOf(udValue)
+	if udValType != rv.Type() {
+		return fmt.Errorf("%s expected but got lua user data of %s", rv.Type(), udValType)
+	}
+	rv.Set(reflect.ValueOf(udValue))
+	return nil
 }
 
 func (m *Mapper) mapString(lv lua.LValue, rv reflect.Value) error {
@@ -343,13 +345,41 @@ func (m *Mapper) mapString(lv lua.LValue, rv reflect.Value) error {
 	case lua.LString:
 		rv.SetString(string(v))
 		return nil
-	case (*lua.LUserData):
+	case *lua.LUserData:
 		if s, ok := v.Value.(string); ok {
 			rv.SetString(s)
 			return nil
 		}
 	}
 	return typeError("string", lv)
+}
+
+func (m *Mapper) mapStruct(lv lua.LValue, rv reflect.Value) error {
+	assert.True(lv != lua.LNil)
+	assert.True(rv.Kind() == reflect.Struct)
+	switch v := lv.(type) {
+	case *lua.LTable:
+		return m.mapLuaTableToGoStruct(v, rv)
+	case *lua.LUserData:
+		return m.mapLuaUserDataToGoValue(v, rv)
+	}
+	return typeError("struct", lv)
+}
+
+func (m *Mapper) mapLuaTableToGoStruct(tbl *lua.LTable, rv reflect.Value) error {
+	assert.True(tbl != nil)
+	assert.True(rv.Kind() == reflect.Struct)
+	for i := 0; i < rv.NumField(); i++ {
+		fldVal := rv.Field(i)
+		if !fldVal.CanSet() {
+			continue // unexported field
+		}
+		name := rv.Type().Field(i).Name // TODO: use tag
+		if err := m.MapValue(tbl.RawGet(lua.LString(name)), fldVal); err != nil {
+			return fmt.Errorf("%s: %w", name, err)
+		}
+	}
+	return nil
 }
 
 func typeError(expectedTypeName string, lv lua.LValue) error {

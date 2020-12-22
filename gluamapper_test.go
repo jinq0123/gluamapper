@@ -36,19 +36,19 @@ type testStruct struct {
 	Func   interface{}
 }
 
-func xTestMap(t *testing.T) {
+func TestMap(t *testing.T) {
 	L := lua.NewState()
 	if err := L.DoString(`
     person = {
-      name = "Michel",
-      age  = "31", -- weakly input
-      work_place = "San Jose",
-      role = {
+      Name = "Michel",
+      Age  = 31,
+      WorkPlace = "San Jose",
+      Role = {
         {
-          name = "Administrator"
+          Name = "Administrator"
         },
         {
-          name = "Operator"
+          Name = "Operator"
         }
       }
     }
@@ -82,45 +82,13 @@ func xTestTypes(t *testing.T) {
 	}
 	var stct testStruct
 
-	if err := NewMapper().Map(L.GetGlobal("tbl").(*lua.LTable), &stct); err != nil {
+	if err := Map(L.GetGlobal("tbl"), &stct); err != nil {
 		t.Error(err)
 	}
 	errorIfNotEqual(t, nil, stct.Nil)
 	errorIfNotEqual(t, true, stct.Bool)
 	errorIfNotEqual(t, "string", stct.String)
 	errorIfNotEqual(t, 10, stct.Number)
-}
-
-func xTestNameFunc(t *testing.T) {
-	L := lua.NewState()
-	if err := L.DoString(`
-    person = {
-      Name = "Michel",
-      Age  = "31", -- weekly input
-      WorkPlace = "San Jose",
-      Role = {
-        {
-          Name = "Administrator"
-        },
-        {
-          Name = "Operator"
-        }
-      }
-    }
-	`); err != nil {
-		t.Error(err)
-	}
-	var person testPerson
-	mapper := NewMapper()
-	if err := mapper.Map(L.GetGlobal("person").(*lua.LTable), &person); err != nil {
-		t.Error(err)
-	}
-	errorIfNotEqual(t, "Michel", person.Name)
-	errorIfNotEqual(t, 31, person.Age)
-	errorIfNotEqual(t, "San Jose", person.WorkPlace)
-	errorIfNotEqual(t, 2, len(person.Role))
-	errorIfNotEqual(t, "Administrator", person.Role[0].Name)
-	errorIfNotEqual(t, "Operator", person.Role[1].Name)
 }
 
 func TestError(t *testing.T) {
@@ -130,13 +98,6 @@ func TestError(t *testing.T) {
 	L.SetField(tbl, "key", lua.LString("value"))
 	err := Map(tbl, 1)
 	assert.EqualError(err, "output must be a pointer")
-
-	tbl = L.NewTable()
-	tbl.Append(lua.LNumber(1))
-	var person testPerson
-	err = Map(tbl, &person)
-	assert.Error(err)
-	// TOFIX: assert.EqualError(err, "arguments #1 must be a table, but got an array")
 }
 
 func TestMapBool(t *testing.T) {
@@ -525,7 +486,7 @@ func TestMapSlice(t *testing.T) {
 	ud.Value = goArray
 	output = nil
 	err = Map(ud, &output)
-	assert.EqualError(err, "slice expected but got lua user data of [3]int")
+	assert.EqualError(err, "[]int expected but got lua user data of [3]int")
 
 	goFloatSlice := []float32{1, 2, 3}
 	ud.Value = goFloatSlice
