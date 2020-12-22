@@ -556,6 +556,26 @@ func TestMapStruct(t *testing.T) {
 	assert.EqualError(err, "gluamapper.testPerson expected but got lua user data of *gluamapper.testPerson")
 }
 
+func TestMapStructWithUnexportedField(t *testing.T) {
+	var err error
+	assert := require.New(t)
+
+	type A struct {
+		Aa int
+		bb int
+	}
+	a := A{Aa: 123, bb: 456}
+	L := lua.NewState()
+	ud := L.NewUserData()
+	ud.Value = a
+
+	var output A
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(123, output.Aa)
+	assert.Equal(456, output.bb) // unexported field
+}
+
 func TestMapPtr(t *testing.T) {
 	var err error
 	var output *int
