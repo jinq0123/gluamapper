@@ -330,6 +330,9 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 func (m *Mapper) mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {
 	// must be the same type
 	udValue := ud.Value
+	if udValue == nil {
+		return fmt.Errorf("%s expected but got lua user data of nil", rv.Type())
+	}
 	udValType := reflect.TypeOf(udValue)
 	if udValType != rv.Type() {
 		return fmt.Errorf("%s expected but got lua user data of %s", rv.Type(), udValType)
@@ -383,10 +386,15 @@ func (m *Mapper) mapLuaTableToGoStruct(tbl *lua.LTable, rv reflect.Value) error 
 }
 
 func typeError(expectedTypeName string, lv lua.LValue) error {
-	if ud, ok := lv.(*lua.LUserData); ok {
-		val := reflect.ValueOf(ud.Value)
-		typ := reflect.Indirect(val).Type()
-		return fmt.Errorf("%s expected but got lua user data of %s", expectedTypeName, typ)
+	ud, ok := lv.(*lua.LUserData)
+	if !ok {
+		return fmt.Errorf("%s expected but got lua %s", expectedTypeName, lv.Type())
 	}
-	return fmt.Errorf("%s expected but got lua %s", expectedTypeName, lv.Type())
+	if ud.Value == nil {
+		return fmt.Errorf("%s expected but got lua user data of nil", expectedTypeName)
+	}
+
+	val := reflect.ValueOf(ud.Value)
+	typ := reflect.Indirect(val).Type()
+	return fmt.Errorf("%s expected but got lua user data of %s", expectedTypeName, typ)
 }

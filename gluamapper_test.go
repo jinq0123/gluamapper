@@ -521,4 +521,22 @@ func TestMapString(t *testing.T) {
 	ud.Value = 123
 	err = Map(ud, &output)
 	assert.EqualError(err, "string expected but got lua user data of int")
+	ud.Value = nil
+	err = Map(ud, &output)
+	assert.EqualError(err, "string expected but got lua user data of nil")
+}
+
+func TestMapStruct(t *testing.T) {
+	var err error
+	var output testPerson
+	assert := require.New(t)
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+
+	L := lua.NewState()
+	ud := L.NewUserData()
+	ud.Value = nil
+	err = Map(ud, &output)
+	assert.EqualError(err, "gluamapper.testPerson expected but got lua user data of nil")
 }
