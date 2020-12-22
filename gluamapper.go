@@ -319,7 +319,7 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 	case (*lua.LUserData):
 		// v.Value must be a slice of the same type
 		udValType := reflect.TypeOf(v.Value)
-		if udValType.Kind() != reflect.Slice { // TODO: is Array OK?
+		if udValType.Kind() != reflect.Slice { // Array is not acceptable
 			return typeError("slice", lv)
 		}
 		if udValType.Elem() != rv.Type().Elem() {

@@ -521,5 +521,18 @@ func TestMapSlice(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(goSlice, output)
 
-	// TOOD: goArray :=
+	goArray := [3]int{1, 2, 3}
+	ud.Value = goArray
+	output = nil
+	err = Map(ud, &output)
+	assert.EqualError(err, "slice expected but got lua user data of [3]int")
+
+	goFloatSlice := []float32{1, 2, 3}
+	ud.Value = goFloatSlice
+	output = nil
+	err = Map(ud, &output)
+	assert.EqualError(err, "[]int expected but got lua user data of []float32")
+
+	err = Map(lua.LTrue, &output)
+	assert.EqualError(err, "slice expected but got lua boolean")
 }
