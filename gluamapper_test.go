@@ -536,3 +536,28 @@ func TestMapSlice(t *testing.T) {
 	err = Map(lua.LTrue, &output)
 	assert.EqualError(err, "slice expected but got lua boolean")
 }
+
+func TestMapString(t *testing.T) {
+	var err error
+	var output string
+	assert := require.New(t)
+	L := lua.NewState()
+
+	err = Map(lua.LString("abc"), &output)
+	assert.NoError(err)
+	assert.Equal("abc", output)
+	output = ""
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Equal("", output)
+
+	ud := L.NewUserData()
+	ud.Value = "abc"
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal("abc", output)
+	ud.Value = 123
+	err = Map(ud, &output)
+	assert.EqualError(err, "string expected but got lua user data of int")
+}

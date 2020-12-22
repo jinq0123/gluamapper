@@ -97,7 +97,7 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 	case reflect.Slice:
 		return m.mapSlice(lv, rv)
 	case reflect.String:
-		return TBI
+		return m.mapString(lv, rv)
 	case reflect.Struct:
 		return TBI
 	case reflect.UnsafePointer:
@@ -334,6 +334,22 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 		return nil
 	}
 	return typeError("slice", lv)
+}
+
+func (m *Mapper) mapString(lv lua.LValue, rv reflect.Value) error {
+	assert.True(lv != lua.LNil)
+	assert.True(rv.Kind() == reflect.String)
+	switch v := lv.(type) {
+	case lua.LString:
+		rv.SetString(string(v))
+		return nil
+	case (*lua.LUserData):
+		if s, ok := v.Value.(string); ok {
+			rv.SetString(s)
+			return nil
+		}
+	}
+	return typeError("string", lv)
 }
 
 func typeError(expectedTypeName string, lv lua.LValue) error {
