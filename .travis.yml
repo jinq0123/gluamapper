@@ -4,9 +4,8 @@ go:
   - 1.15.x
   - 1.14.x
 
-install:
-  - go get github.com/mitchellh/mapstructure
-  - go get github.com/yuin/gopher-lua
-
 script:
- - go test -v -race
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

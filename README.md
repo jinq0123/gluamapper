@@ -1,6 +1,7 @@
 # gluamapper: maps a GopherLua table to a Go struct
 
 [![Build Status](https://travis-ci.org/jinq0123/gluamapper.svg)](https://travis-ci.org/jinq0123/gluamapper)
+[![codecov](https://codecov.io/gh/jinq0123/gluamapper/branch/master/graph/badge.svg?token=190O5EPVTH)](https://codecov.io/gh/jinq0123/gluamapper)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/jinq0123/gluamapper)](https://pkg.go.dev/github.com/jinq0123/gluamapper)
 
 gluamapper provides an easy way to map GopherLua tables to Go structs.

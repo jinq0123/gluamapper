@@ -389,15 +389,16 @@ func (m *Mapper) mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) er
 
 	// must be the same type
 	udValType := reflect.TypeOf(udValue)
-	if udValType != rv.Type() {
-		return &typeError{
-			goType:               rv.Type(),
-			luaType:              lua.LTUserData,
-			luaUserDataValueType: udValType,
-		}
+	if udValType == rv.Type() {
+		rv.Set(reflect.ValueOf(udValue))
+		return nil
 	}
-	rv.Set(reflect.ValueOf(udValue))
-	return nil
+
+	return &typeError{
+		goType:               rv.Type(),
+		luaType:              lua.LTUserData,
+		luaUserDataValueType: udValType,
+	}
 }
 
 func (m *Mapper) mapString(lv lua.LValue, rv reflect.Value) error {
