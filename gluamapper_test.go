@@ -602,6 +602,7 @@ func TestMapInterface(t *testing.T) {
 	assert.Equal("abc", output)
 	err = Map(L.GetGlobal("t"), &output)
 	assert.NoError(err)
+	assert.NotEmpty(output)
 	assert.Equal(float64(1234), output.(map[string]interface{})["a"])
 	output = nil
 	err = Map(L.GetGlobal("f"), &output)

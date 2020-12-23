@@ -15,17 +15,22 @@ func Map(lv lua.LValue, output interface{}) error {
 
 func mapBool(lv lua.LValue, rv reflect.Value) error {
 	assert.True(rv.Kind() == reflect.Bool)
-	switch v := lv.(type) {
-	case lua.LBool:
-		rv.SetBool(bool(v))
+	if b, ok := toBool(lv); ok {
+		rv.SetBool(b)
 		return nil
-	case *lua.LUserData:
-		if b, ok := v.Value.(bool); ok {
-			rv.SetBool(b)
-			return nil
-		}
 	}
 	return newTypeError(lv, rv)
+}
+
+func toBool(lv lua.LValue) (result bool, ok bool) {
+	switch v := lv.(type) {
+	case lua.LBool:
+		return bool(v), true
+	case *lua.LUserData:
+		result, ok = v.Value.(bool)
+		return result, ok
+	}
+	return false, false
 }
 
 func mapInt(lv lua.LValue, rv reflect.Value) error {
@@ -208,28 +213,44 @@ func mapFloat64(lv lua.LValue, rv reflect.Value) error {
 	return newTypeError(lv, rv)
 }
 
-// TODO: need to return error?
+// Always returns nil
 func mapInterface(lv lua.LValue, rv reflect.Value) error {
 	assert.True(lv != lua.LNil)
 	assert.True(rv.Kind() == reflect.Interface)
+	itf := toInterface(lv)
+	if itf != nil {
+		rv.Set(reflect.ValueOf(itf))
+		return nil
+	}
+
+	// can not call of reflect.Value.Set on zero Value
+	var i interface{} // nil
+	ri := reflect.ValueOf(&i).Elem()
+	rv.Set(ri) // Set to nil
+	return nil
+}
+
+func toInterface(lv lua.LValue) interface{} {
 	switch v := lv.(type) {
+	case *lua.LNilType:
+		return nil
 	case lua.LBool:
-		rv.Set(reflect.ValueOf(bool(v)))
+		return bool(v)
 	case lua.LNumber:
-		rv.Set(reflect.ValueOf(float64(v)))
+		return float64(v)
 	case lua.LString:
-		rv.Set(reflect.ValueOf(string(v)))
+		return string(v)
 	case *lua.LFunction:
-		rv.Set(reflect.ValueOf(v)) // keep as *LFunction
+		return v // keep as *LFunction
 	case *lua.LUserData:
-		return mapLuaUserDataToGoInterface(v, rv)
+		return v.Value // may be nil
 	// case *lua.LTThread: no such type
 	case *lua.LTable:
-		return mapLuaTableToGoInterface(v, rv)
+		return luaTableToGoInterface(v)
 	case lua.LChannel:
-		rv.Set(reflect.ValueOf((chan lua.LValue)(v)))
+		return (chan lua.LValue)(v)
 	default:
-		rv.Set(reflect.ValueOf(v)) // keep as v
+		return v // keep as v
 	}
 	return nil
 }
@@ -237,69 +258,47 @@ func mapInterface(lv lua.LValue, rv reflect.Value) error {
 func mapString(lv lua.LValue, rv reflect.Value) error {
 	assert.True(lv != lua.LNil)
 	assert.True(rv.Kind() == reflect.String)
-	switch v := lv.(type) {
-	case lua.LString:
-		rv.SetString(string(v))
+	if s, ok := toString(lv); ok {
+		rv.SetString(s)
 		return nil
-	case *lua.LUserData:
-		if s, ok := v.Value.(string); ok {
-			rv.SetString(s)
-			return nil
-		}
 	}
 	return newTypeError(lv, rv)
 }
 
-func mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) error {
+func toString(lv lua.LValue) (result string, ok bool) {
+	switch v := lv.(type) {
+	case lua.LString:
+		return string(v), true
+	case *lua.LUserData:
+		result, ok := v.Value.(string)
+		return result, ok
+	}
+	return "", false
+}
+
+func luaTableToGoInterface(tbl *lua.LTable) interface{} {
 	assert.True(tbl != nil)
-	assert.True(rv.Kind() == reflect.Interface)
 	maxn := tbl.MaxN()
 	if maxn == 0 { // table -> map[interface{}]interface{}
 		// TODO: extract tblToMap()
 		mp := make(map[string]interface{}) // Only support string key
 		tbl.ForEach(func(lKey, lVal lua.LValue) {
-			var key string
-			if err := mapString(lKey, reflect.ValueOf(&key).Elem()); err != nil { // TODO: use toString()
-				return // skip field if error
+			key, ok := toString(lKey)
+			if !ok {
+				return // skip non-string key
 			}
-			var val interface{}
-			if err := mapInterface(lVal, reflect.ValueOf(&val).Elem()); err != nil {
-				return // skip field if error
-			}
+			val := toInterface(lVal)
 			mp[key] = val
 		})
-		rv.Set(reflect.ValueOf(mp))
-		return nil
+		return mp
 	}
 
 	// else: array -> []interface{}
 	slc := make([]interface{}, maxn, maxn)
-	rvSlc := reflect.ValueOf(slc)
 	for i := 0; i < maxn; i++ {
-		if err := mapInterface(tbl.RawGetInt(i+1), rvSlc.Index(i)); err != nil {
-			return err
-		}
+		slc[i] = toInterface(tbl.RawGetInt(i + 1))
 	}
-	rv.Set(rvSlc)
-	return nil
-}
-
-// TODO: delete return
-// change to luaUserDataToGoInterface(ud) interface{}
-func mapLuaUserDataToGoInterface(ud *lua.LUserData, rv reflect.Value) error {
-	assert.True(ud != nil)
-	assert.True(rv.Kind() == reflect.Interface)
-	udValue := ud.Value
-	// can not call of reflect.Value.Set on zero Value
-	if udValue != nil {
-		rv.Set(reflect.ValueOf(udValue))
-		return nil
-	}
-
-	var i interface{} // nil
-	ri := reflect.ValueOf(&i).Elem()
-	rv.Set(ri) // Set to nil
-	return nil
+	return slc
 }
 
 func mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {

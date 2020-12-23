@@ -190,22 +190,6 @@ func (m *Mapper) mapLuaTableToGoStruct(tbl *lua.LTable, rv reflect.Value) error 
 	return nil
 }
 
-func (m *Mapper) mapLuaUserDataToGoInterface(ud *lua.LUserData, rv reflect.Value) error {
-	assert.True(ud != nil)
-	assert.True(rv.Kind() == reflect.Interface)
-	udValue := ud.Value
-	// can not call of reflect.Value.Set on zero Value
-	if udValue != nil {
-		rv.Set(reflect.ValueOf(udValue))
-		return nil
-	}
-
-	var i interface{} // nil
-	ri := reflect.ValueOf(&i).Elem()
-	rv.Set(ri) // Set to nil
-	return nil
-}
-
 func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
 	assert.True(tbl != nil)
 	assert.True(rv.Kind() == reflect.Map)
