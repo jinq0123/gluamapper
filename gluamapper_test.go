@@ -589,8 +589,12 @@ func TestMapInterface(t *testing.T) {
 		t = {a=1234}
 		f = function() end
 		t2t = {[{a=1}] = 123}
+		arr = {1,2,3, abc=456}
 	`)
 	assert.NoError(err)
+	err = Map(L.GetGlobal("no_such_variable"), &output)
+	assert.NoError(err)
+	assert.Nil(output)
 	err = Map(L.GetGlobal("n"), &output)
 	assert.NoError(err)
 	assert.Equal(float64(234), output)
@@ -611,6 +615,10 @@ func TestMapInterface(t *testing.T) {
 	err = Map(L.GetGlobal("t2t"), &output)
 	assert.NoError(err)
 	assert.EqualValues(map[string]interface{}{}, output)
+	output = nil
+	err = Map(L.GetGlobal("arr"), &output)
+	assert.NoError(err)
+	assert.EqualValues([]interface{}{1.0, 2.0, 3.0}, output)
 
 	ch := make(chan lua.LValue)
 	L.SetGlobal("ch", lua.LChannel(ch))

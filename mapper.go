@@ -214,7 +214,7 @@ func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
 	tbl.ForEach(func(lKey, lVal lua.LValue) {
 		rvKeyPtr := reflect.New(keyType) // rvKeyPtr is a pointer to a new zero key
 		rvKey := rvKeyPtr.Elem()
-		if err := m.MapValue(lKey, rvKeyPtr.Elem()); err != nil { // TODO: MapValue() 应该只返回bool, 不要创建 error
+		if err := m.MapValue(lKey, rvKeyPtr.Elem()); err != nil {
 			return // skip field if error
 		}
 		rvElemPtr := reflect.New(elemType)
