@@ -356,14 +356,7 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 	assert.True(rv.Kind() == reflect.Slice)
 	switch v := lv.(type) {
 	case *lua.LTable:
-		// Make a new slice and copy each element.
-		tblLen := v.Len()
-		slice := reflect.MakeSlice(rv.Type(), tblLen, tblLen)
-		if err := m.mapLuaTableToGoSlice(v, slice); err != nil {
-			return err
-		}
-		rv.Set(slice)
-		return nil
+		return m.mapLuaTableToGoSlice(v, rv)
 	case *lua.LUserData:
 		return m.mapLuaUserDataToGoValue(v, rv)
 	}
@@ -374,7 +367,13 @@ func (m *Mapper) mapLuaTableToGoSlice(tbl *lua.LTable, rv reflect.Value) error {
 	assert.True(tbl != nil)
 	assert.True(rv.Kind() == reflect.Slice)
 	tblLen := tbl.Len()
-	assert.True(rv.Len() >= tblLen)
+	rvLen := rv.Len()
+	if rvLen < tblLen {
+		rv.Set(reflect.MakeSlice(rv.Type(), tblLen, tblLen))
+	} else if rvLen > tblLen {
+		rv.SetLen(tblLen)
+	}
+
 	for i := 0; i < tblLen; i++ {
 		if err := m.MapValue(tbl.RawGetInt(i+1), rv.Index(i)); err != nil {
 			return err
@@ -460,20 +459,33 @@ func (m *Mapper) mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) err
 	assert.True(rv.Kind() == reflect.Interface)
 	maxn := tbl.MaxN()
 	if maxn == 0 { // table -> map[interface{}]interface{}
-		mp := reflect.MakeMap(reflect.TypeOf(map[interface{}]interface{}{}))
-		if err := m.mapLuaTableToGoMap(tbl, mp); err != nil { // TODO: use a new mapLuaTableToGoMapOfInterfaces
-			return err
-		}
-		rv.Set(mp)
-		return nil
-	} else { // array -> []interface{}
-		slc := reflect.MakeSlice(reflect.TypeOf([]interface{}{}), 0, maxn)
-		if err := m.mapLuaTableToGoSlice(tbl, slc); err != nil {
-			return err
-		}
-		rv.Set(slc)
+		// TODO: extract tblToMap()
+		mp := make(map[interface{}]interface{})
+		tbl.ForEach(func(lKey, lVal lua.LValue) {
+			var key interface{}
+			if err := m.mapInterface(lKey, reflect.ValueOf(&key).Elem()); err != nil {
+				return // skip field if error
+			}
+			var val interface{}
+			if err := m.mapInterface(lVal, reflect.ValueOf(&val).Elem()); err != nil {
+				return // skip field if error
+			}
+			mp[key] = val
+		})
+		rv.Set(reflect.ValueOf(mp))
 		return nil
 	}
+
+	// else: array -> []interface{}
+	slc := make([]interface{}, maxn, maxn)
+	rvSlc := reflect.ValueOf(slc)
+	for i := 0; i < maxn; i++ {
+		if err := m.mapInterface(tbl.RawGetInt(i+1), rvSlc.Index(i)); err != nil {
+			return err
+		}
+	}
+	rv.Set(rvSlc)
+	return nil
 }
 
 func (m *Mapper) mapLuaUserDataToGoInterface(ud *lua.LUserData, rv reflect.Value) error {
