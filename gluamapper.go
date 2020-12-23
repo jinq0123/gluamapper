@@ -314,12 +314,14 @@ func (m *Mapper) mapInterface(lv lua.LValue, rv reflect.Value) error {
 	case *lua.LFunction:
 		rv.Set(reflect.ValueOf(v)) // keep as *LFunction
 	case *lua.LUserData:
-		return m.mapLuaUserDataToGoValue(v, rv)
+		return m.mapLuaUserDataToGoInterface(v, rv)
 	// case *lua.LTThread: no such type
 	case *lua.LTable:
 		return m.mapLuaTableToGoInterface(v, rv)
-	case *lua.LChannel:
-		rv.Set(reflect.ValueOf(v)) // keep as *LChannel
+	case lua.LChannel:
+		rv.Set(reflect.ValueOf((chan lua.LValue)(v)))
+	default:
+		rv.Set(reflect.ValueOf(v)) // keep as v
 	}
 	return nil
 }
@@ -472,6 +474,22 @@ func (m *Mapper) mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) err
 		rv.Set(slc)
 		return nil
 	}
+}
+
+func (m *Mapper) mapLuaUserDataToGoInterface(ud *lua.LUserData, rv reflect.Value) error {
+	assert.True(ud != nil)
+	assert.True(rv.Kind() == reflect.Interface)
+	udValue := ud.Value
+	// can not call of reflect.Value.Set on zero Value
+	if udValue != nil {
+		rv.Set(reflect.ValueOf(udValue))
+		return nil
+	}
+
+	var i interface{} // nil
+	ri := reflect.ValueOf(&i).Elem()
+	rv.Set(ri) // Set to nil
+	return nil
 }
 
 func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {

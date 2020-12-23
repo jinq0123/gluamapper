@@ -602,10 +602,34 @@ func TestMapInterface(t *testing.T) {
 	err = Map(L.GetGlobal("t"), &output)
 	assert.NoError(err)
 	assert.Equal(float64(1234), output.(map[interface{}]interface{})["a"])
+	output = nil
 	err = Map(L.GetGlobal("f"), &output)
 	assert.NoError(err)
-	// XXX assert.Nil(output)
-	// XXX
+	assert.NotNil(output)
+
+	ch := make(chan lua.LValue)
+	L.SetGlobal("ch", lua.LChannel(ch))
+	err = Map(L.GetGlobal("ch"), &output)
+	assert.NoError(err)
+	assert.Equal(output, ch)
+
+	ud := L.NewUserData()
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Nil(output)
+	ud.Value = 123
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(123, output)
+	ud.Value = nil
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Nil(output)
+	arr := [12]int{1, 2, 3}
+	ud.Value = arr
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(arr, output)
 }
 
 func TestMapMap(t *testing.T) {
