@@ -68,6 +68,7 @@ MIT
 		converts the table to `map[string]interface{}`,
 		and then converts it to a Go struct using [`mapstructure`](https://github.com/mitchellh/mapstructure/).
 	* No "weak" conversions
+		+ only lua number to int types allowed
 	* Always ignores unused keys
 
 + New feature

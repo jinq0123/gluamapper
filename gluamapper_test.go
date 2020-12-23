@@ -638,11 +638,23 @@ func TestMapMap(t *testing.T) {
 	assert := require.New(t)
 
 	L := lua.NewState()
-	err = L.DoString(`input = {abc = 123}`)
+	err = L.DoString(`
+		tbl = {abc = 123, [222]=222, [333]="333", [444]=444.4}
+		arr = {1,2,3}
+	`)
 	assert.NoError(err)
-	err = Map(L.GetGlobal("input"), &output)
+
+	err = Map(L.GetGlobal("tbl"), &output)
 	assert.NoError(err)
-	assert.Equal(0, len(output))
+	assert.Equal(2, len(output))
+	assert.Equal(222, output[222])
+	assert.Equal(444, output[444]) // 444.4 -> 444
+
+	output = nil
+	err = Map(L.GetGlobal("arr"), &output)
+	assert.NoError(err)
+	assert.Equal(3, len(output))
+	assert.Equal(map[int]int{1: 1, 2: 2, 3: 3}, output)
 	// XXX
 }
 

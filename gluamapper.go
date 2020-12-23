@@ -461,7 +461,7 @@ func (m *Mapper) mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) err
 	maxn := tbl.MaxN()
 	if maxn == 0 { // table -> map[interface{}]interface{}
 		mp := reflect.MakeMap(reflect.TypeOf(map[interface{}]interface{}{}))
-		if err := m.mapLuaTableToGoMap(tbl, mp); err != nil {
+		if err := m.mapLuaTableToGoMap(tbl, mp); err != nil { // TODO: use a new mapLuaTableToGoMapOfInterfaces
 			return err
 		}
 		rv.Set(mp)
@@ -498,6 +498,9 @@ func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
 	mapType := rv.Type()
 	keyType := mapType.Key()
 	elemType := mapType.Elem()
+	if rv.IsNil() {
+		rv.Set(reflect.MakeMap(mapType))
+	}
 	tbl.ForEach(func(lKey, lVal lua.LValue) {
 		rvKeyPtr := reflect.New(keyType) // rvKeyPtr is a pointer to a new zero key
 		rvKey := rvKeyPtr.Elem()
