@@ -256,10 +256,10 @@ func mapLuaTableToGoInterface(tbl *lua.LTable, rv reflect.Value) error {
 	maxn := tbl.MaxN()
 	if maxn == 0 { // table -> map[interface{}]interface{}
 		// TODO: extract tblToMap()
-		mp := make(map[interface{}]interface{})
+		mp := make(map[string]interface{}) // Only support string key
 		tbl.ForEach(func(lKey, lVal lua.LValue) {
-			var key interface{}
-			if err := mapInterface(lKey, reflect.ValueOf(&key).Elem()); err != nil {
+			var key string
+			if err := mapString(lKey, reflect.ValueOf(&key).Elem()); err != nil { // TODO: use toString()
 				return // skip field if error
 			}
 			var val interface{}
