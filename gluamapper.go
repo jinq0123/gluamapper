@@ -276,21 +276,21 @@ func toString(lv lua.LValue) (result string, ok bool) {
 	return "", false
 }
 
+func luaTableToGoMap(tbl *lua.LTable) map[string]interface{} {
+	mp := make(map[string]interface{})
+	tbl.ForEach(func(lKey, lVal lua.LValue) {
+		if key, ok := toString(lKey); ok {
+			mp[key] = toInterface(lVal)
+		}
+	})
+	return mp
+}
+
 func luaTableToGoInterface(tbl *lua.LTable) interface{} {
 	assert.True(tbl != nil)
 	maxn := tbl.MaxN()
-	if maxn == 0 { // table -> map[interface{}]interface{}
-		// TODO: extract tblToMap()
-		mp := make(map[string]interface{}) // Only support string key
-		tbl.ForEach(func(lKey, lVal lua.LValue) {
-			key, ok := toString(lKey)
-			if !ok {
-				return // skip non-string key
-			}
-			val := toInterface(lVal)
-			mp[key] = val
-		})
-		return mp
+	if maxn == 0 { // table -> map[string]interface{}
+		return luaTableToGoMap(tbl) // Only support string key
 	}
 
 	// else: array -> []interface{}
