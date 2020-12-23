@@ -76,3 +76,6 @@ MIT
 
 + Bugfix
 	* TODO: circular reference
+
+## TODO
+* handle embedded fields

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	assert "github.com/arl/assertgo"
 	"github.com/yuin/gopher-lua"
@@ -177,14 +178,25 @@ func (m *Mapper) mapStruct(lv lua.LValue, rv reflect.Value) error {
 func (m *Mapper) mapLuaTableToGoStruct(tbl *lua.LTable, rv reflect.Value) error {
 	assert.True(tbl != nil)
 	assert.True(rv.Kind() == reflect.Struct)
+	rvType := rv.Type()
 	for i := 0; i < rv.NumField(); i++ {
 		fldVal := rv.Field(i)
 		if !fldVal.CanSet() {
 			continue // unexported field
 		}
-		name := rv.Type().Field(i).Name // TODO: use tag
-		if err := m.MapValue(tbl.RawGet(lua.LString(name)), fldVal); err != nil {
-			return fmt.Errorf("%s: %w", name, err)
+
+		field := rvType.Field(i)
+		fieldName := field.Name
+		if m.TagName != "" {
+			tagValue := field.Tag.Get(m.TagName)
+			tagSubValue := strings.SplitN(tagValue, ",", 2)[0]
+			if tagSubValue != "" {
+				fieldName = tagSubValue
+			}
+		} // if m.TagName
+
+		if err := m.MapValue(tbl.RawGet(lua.LString(fieldName)), fldVal); err != nil {
+			return fmt.Errorf("%s: %w", field.Name, err)
 		}
 	}
 	return nil
