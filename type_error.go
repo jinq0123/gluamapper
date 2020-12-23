@@ -7,7 +7,7 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
-type typeError struct {
+type TypeError struct {
 	goType  reflect.Type
 	luaType lua.LValueType
 
@@ -16,10 +16,10 @@ type typeError struct {
 	luaUserDataValueType  reflect.Type
 }
 
-func newTypeError(lv lua.LValue, rv reflect.Value) *typeError {
+func newTypeError(lv lua.LValue, rv reflect.Value) *TypeError {
 	goType := rv.Type()
 	luaType := lv.Type()
-	result := &typeError{
+	result := &TypeError{
 		goType:  goType,
 		luaType: luaType,
 	}
@@ -38,7 +38,7 @@ func newTypeError(lv lua.LValue, rv reflect.Value) *typeError {
 	return result
 }
 
-func (t *typeError) Error() string {
+func (t *TypeError) Error() string {
 	if t.luaType != lua.LTUserData {
 		return fmt.Sprintf("%s expected but got lua %s", t.goType, t.luaType)
 	}
