@@ -37,7 +37,7 @@ func ExampleMap() {
 		panic(err)
 	}
 	var person Person
-	if err := Map(L.GetGlobal("person").(*lua.LTable), &person); err != nil {
+	if err := Map(L.GetGlobal("person"), &person); err != nil {
 		panic(err)
 	}
 	fmt.Printf("%s %d", person.Name, person.Age)

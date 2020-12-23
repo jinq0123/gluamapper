@@ -1,10 +1,10 @@
-# gluamapper: maps a GopherLua table to a Go struct
+# gluamapper: maps a GopherLua value to a Go value
 
 [![Build Status](https://travis-ci.org/jinq0123/gluamapper.svg)](https://travis-ci.org/jinq0123/gluamapper)
 [![codecov](https://codecov.io/gh/jinq0123/gluamapper/branch/master/graph/badge.svg?token=190O5EPVTH)](https://codecov.io/gh/jinq0123/gluamapper)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/jinq0123/gluamapper)](https://pkg.go.dev/github.com/jinq0123/gluamapper)
 
-gluamapper provides an easy way to map GopherLua tables to Go structs.
+gluamapper provides an easy way to map GopherLua values to Go values.
 
 ## Installation
 
@@ -31,24 +31,24 @@ See [Go doc](https://pkg.go.dev/github.com/jinq0123/gluamapper).
 
     L := lua.NewState()
     if err := L.DoString(`
-    person = {
-      name = "Michel",
-      age  = "31", -- weakly input
-      work_place = "San Jose",
-      role = {
-        {
-          name = "Administrator"
-        },
-        {
-          name = "Operator"
+      person = {
+        Name = "Michel",
+        Age  = 31,
+        WorkPlace = "San Jose",
+        Role = {
+          {
+            Name = "Administrator"
+          },
+          {
+            Name = "Operator"
+          }
         }
       }
-    }
     `); err != nil {
         panic(err)
     }
     var person Person
-    if err := gluamapper.Map(L.GetGlobal("person").(*lua.LTable), &person); err != nil {
+    if err := gluamapper.Map(L.GetGlobal("person"), &person); err != nil {
         panic(err)
     }
     fmt.Printf("%s %d", person.Name, person.Age)

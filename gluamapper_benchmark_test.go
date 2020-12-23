@@ -8,18 +8,19 @@ import (
 )
 
 func BenchmarkJinq0123Map(b *testing.B) {
-	tbl := getLuaPersonTable()
+	luaPerson := getLuaPersonValue()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var person testPerson
-		if err := Map(tbl, &person); err != nil {
+		if err := Map(luaPerson, &person); err != nil {
 			panic(err)
 		}
 	}
 }
 
 func BenchmarkYuinMap(b *testing.B) {
-	tbl := getLuaPersonTable()
+	luaPerson := getLuaPersonValue()
+	tbl := luaPerson.(*lua.LTable)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var person testPerson
@@ -29,7 +30,7 @@ func BenchmarkYuinMap(b *testing.B) {
 	}
 }
 
-func getLuaPersonTable() *lua.LTable {
+func getLuaPersonValue() lua.LValue {
 	L := lua.NewState()
 	if err := L.DoString(`
     person = {
@@ -48,5 +49,5 @@ func getLuaPersonTable() *lua.LTable {
 	`); err != nil {
 		panic(err)
 	}
-	return L.GetGlobal("person").(*lua.LTable)
+	return L.GetGlobal("person")
 }

@@ -37,7 +37,7 @@ func TestMap(t *testing.T) {
 		t.Error(err)
 	}
 	var person testPerson
-	if err := Map(L.GetGlobal("person").(*lua.LTable), &person); err != nil {
+	if err := Map(L.GetGlobal("person"), &person); err != nil {
 		t.Error(err)
 	}
 	errorIfNotEqual(t, "Michel", person.Name)
