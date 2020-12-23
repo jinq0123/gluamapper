@@ -7,7 +7,7 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
-// Map maps the lua value to the given go pointer with default options.
+// Map maps the lua value to the given go pointer.
 // Please reset output before Map()
 func Map(lv lua.LValue, output interface{}) error {
 	return NewMapper().Map(lv, output)
@@ -302,29 +302,32 @@ func mapLuaUserDataToGoInterface(ud *lua.LUserData, rv reflect.Value) error {
 	return nil
 }
 
-func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
-	assert.True(tbl != nil)
-	assert.True(rv.Kind() == reflect.Map)
-	mapType := rv.Type()
-	keyType := mapType.Key()
-	elemType := mapType.Elem()
-	if rv.IsNil() {
-		rv.Set(reflect.MakeMap(mapType))
+func mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {
+	udValue := ud.Value
+	if udValue == nil {
+		if canBeNil(rv) {
+			rv.Set(reflect.Zero(rv.Type()))
+			return nil
+		}
+		return &TypeError{
+			goType:                rv.Type(),
+			luaType:               lua.LTUserData,
+			isLuaUserDataValueNil: true,
+		}
 	}
-	tbl.ForEach(func(lKey, lVal lua.LValue) {
-		rvKeyPtr := reflect.New(keyType) // rvKeyPtr is a pointer to a new zero key
-		rvKey := rvKeyPtr.Elem()
-		if err := m.MapValue(lKey, rvKeyPtr.Elem()); err != nil { // TODO: MapValue() 应该只返回bool, 不要创建 error
-			return // skip field if error
-		}
-		rvElemPtr := reflect.New(elemType)
-		rvElem := rvElemPtr.Elem()
-		if err := m.MapValue(lVal, rvElemPtr.Elem()); err != nil {
-			return // skip field if error
-		}
-		rv.SetMapIndex(rvKey, rvElem)
-	})
-	return nil
+
+	// must be the same type
+	udValType := reflect.TypeOf(udValue)
+	if udValType == rv.Type() {
+		rv.Set(reflect.ValueOf(udValue))
+		return nil
+	}
+
+	return &TypeError{
+		goType:               rv.Type(),
+		luaType:              lua.LTUserData,
+		luaUserDataValueType: udValType,
+	}
 }
 
 // canBeNil reports whether its argument v can be nil.

@@ -113,7 +113,7 @@ func (m *Mapper) mapMap(lv lua.LValue, rv reflect.Value) error {
 	case *lua.LTable:
 		return m.mapLuaTableToGoMap(v, rv)
 	case *lua.LUserData:
-		return m.mapLuaUserDataToGoValue(v, rv)
+		return mapLuaUserDataToGoValue(v, rv)
 	}
 	return newTypeError(lv, rv)
 }
@@ -122,7 +122,7 @@ func (m *Mapper) mapPtr(lv lua.LValue, rv reflect.Value) error {
 	assert.True(lv != lua.LNil)
 	assert.True(rv.Kind() == reflect.Ptr)
 	if ud, ok := lv.(*lua.LUserData); ok {
-		return m.mapLuaUserDataToGoValue(ud, rv)
+		return mapLuaUserDataToGoValue(ud, rv)
 	}
 	elemPtr := reflect.New(rv.Type().Elem())
 	if err := m.mapNonNilValue(lv, elemPtr.Elem()); err != nil {
@@ -138,7 +138,7 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 	case *lua.LTable:
 		return m.mapLuaTableToGoSlice(v, rv)
 	case *lua.LUserData:
-		return m.mapLuaUserDataToGoValue(v, rv)
+		return mapLuaUserDataToGoValue(v, rv)
 	}
 	return newTypeError(lv, rv)
 }
@@ -162,34 +162,6 @@ func (m *Mapper) mapLuaTableToGoSlice(tbl *lua.LTable, rv reflect.Value) error {
 	return nil
 }
 
-func (m *Mapper) mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {
-	udValue := ud.Value
-	if udValue == nil {
-		if canBeNil(rv) {
-			rv.Set(reflect.Zero(rv.Type()))
-			return nil
-		}
-		return &TypeError{
-			goType:                rv.Type(),
-			luaType:               lua.LTUserData,
-			isLuaUserDataValueNil: true,
-		}
-	}
-
-	// must be the same type
-	udValType := reflect.TypeOf(udValue)
-	if udValType == rv.Type() {
-		rv.Set(reflect.ValueOf(udValue))
-		return nil
-	}
-
-	return &TypeError{
-		goType:               rv.Type(),
-		luaType:              lua.LTUserData,
-		luaUserDataValueType: udValType,
-	}
-}
-
 func (m *Mapper) mapStruct(lv lua.LValue, rv reflect.Value) error {
 	assert.True(lv != lua.LNil)
 	assert.True(rv.Kind() == reflect.Struct)
@@ -197,7 +169,7 @@ func (m *Mapper) mapStruct(lv lua.LValue, rv reflect.Value) error {
 	case *lua.LTable:
 		return m.mapLuaTableToGoStruct(v, rv)
 	case *lua.LUserData:
-		return m.mapLuaUserDataToGoValue(v, rv)
+		return mapLuaUserDataToGoValue(v, rv)
 	}
 	return newTypeError(lv, rv)
 }
@@ -231,5 +203,30 @@ func (m *Mapper) mapLuaUserDataToGoInterface(ud *lua.LUserData, rv reflect.Value
 	var i interface{} // nil
 	ri := reflect.ValueOf(&i).Elem()
 	rv.Set(ri) // Set to nil
+	return nil
+}
+
+func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
+	assert.True(tbl != nil)
+	assert.True(rv.Kind() == reflect.Map)
+	mapType := rv.Type()
+	keyType := mapType.Key()
+	elemType := mapType.Elem()
+	if rv.IsNil() {
+		rv.Set(reflect.MakeMap(mapType))
+	}
+	tbl.ForEach(func(lKey, lVal lua.LValue) {
+		rvKeyPtr := reflect.New(keyType) // rvKeyPtr is a pointer to a new zero key
+		rvKey := rvKeyPtr.Elem()
+		if err := m.MapValue(lKey, rvKeyPtr.Elem()); err != nil { // TODO: MapValue() 应该只返回bool, 不要创建 error
+			return // skip field if error
+		}
+		rvElemPtr := reflect.New(elemType)
+		rvElem := rvElemPtr.Elem()
+		if err := m.MapValue(lVal, rvElemPtr.Elem()); err != nil {
+			return // skip field if error
+		}
+		rv.SetMapIndex(rvKey, rvElem)
+	})
 	return nil
 }
