@@ -655,7 +655,19 @@ func TestMapMap(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(3, len(output))
 	assert.Equal(map[int]int{1: 1, 2: 2, 3: 3}, output)
-	// XXX
+
+	ud := L.NewUserData()
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Nil(output)
+	ud.Value = 123
+	err = Map(ud, &output)
+	assert.EqualError(err, "map[int]int expected but got lua user data of int")
+	ud.Value = map[int]int{1: 1}
+	err = Map(ud, &output)
+	assert.NoError(err)
+	assert.Equal(1, output[1])
+	assert.Equal(1, len(output))
 }
 
 func TestMapPtr(t *testing.T) {
