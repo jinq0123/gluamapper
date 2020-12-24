@@ -97,3 +97,30 @@ func ExampleMapper_MapValue() {
 	// Output:
 	// Michel 31
 }
+
+func ExampleMapper_tagName() {
+	L := lua.NewState()
+	_ = L.DoString(`
+		tbl = {
+			UserName = "UserName",
+			my_user_name = "my_user_name"
+		}
+	`)
+	type User struct {
+		UserName string `mytag:"my_user_name"`
+	}
+
+	// Map will use the default field name
+	tbl := L.GetGlobal("tbl")
+	var output User
+	_ = Map(tbl, &output) // look for default key name
+	fmt.Printf("default UserName: %s\n", output.UserName)
+
+	// use tag mytag to get key name
+	_ = NewMapperWithTagName("mytag").Map(tbl, &output)
+	fmt.Printf("with tag name: %s\n", output.UserName)
+
+	// Output:
+	// default UserName: UserName
+	// with tag name: my_user_name
+}

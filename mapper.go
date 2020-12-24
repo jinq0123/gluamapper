@@ -10,7 +10,9 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
-var OutputValueIsNilError = errors.New("output value is nil")
+var (
+	OutputValueIsNilError = errors.New("output value is nil")
+)
 
 // Mapper maps a lua table to a Go struct pointer.
 type Mapper struct {
@@ -34,7 +36,7 @@ func NewMapperWithTagName(tagName string) *Mapper {
 func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 	rv := reflect.ValueOf(output)
 	if rv.Kind() != reflect.Ptr {
-		return fmt.Errorf("output must be a pointer but got a %s", rv.Kind())
+		return &OutputIsNotAPointerError{outputValue: rv}
 	}
 	return m.MapValue(lv, rv.Elem())
 }
@@ -91,7 +93,7 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 		return TBI
 	case reflect.Complex128:
 		return TBI
-	case reflect.Array:
+	case reflect.Array: // TODO
 		return TBI
 	case reflect.Chan:
 		return TBI
@@ -156,10 +158,12 @@ func (m *Mapper) mapLuaTableToGoSlice(tbl *lua.LTable, rv reflect.Value) error {
 	assert.True(tbl != nil)
 	assert.True(rv.Kind() == reflect.Slice)
 	tblLen := tbl.Len()
-	rvLen := rv.Len()
-	if rvLen < tblLen {
+	rvCap := rv.Cap()
+	if rvCap < tblLen {
+		// reset to a new slice if need more capacity
 		rv.Set(reflect.MakeSlice(rv.Type(), tblLen, tblLen))
-	} else if rvLen > tblLen {
+	} else if rv.Len() != tblLen {
+		// set len if capacity is large enough
 		rv.SetLen(tblLen)
 	}
 

@@ -86,7 +86,7 @@ func TestError(t *testing.T) {
 	tbl := L.NewTable()
 	L.SetField(tbl, "key", lua.LString("value"))
 	err := Map(tbl, 1)
-	assert.EqualError(err, "output must be a pointer but got a int")
+	assert.EqualError(err, "output is not a pointer but a kind of int")
 
 	var p *int
 	err = Map(lua.LNil, p)

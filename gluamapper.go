@@ -7,7 +7,49 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
-// Map maps the lua value to the given go pointer.
+// Map maps the Lua value to the Go value pointed by output.
+// If output is not a pointer, Map returns OutputIsNotAPointerError.
+// If output is nil, Map returns OutputValueIsNilError.
+// If the Lua value is nil, the Go value will be set to its zero value.
+// Is the Lua value is a *lua.LUserData, the Go value will be set to the value of the LUserData
+// if they are the same type, or TypeError will be returned if they are not the same type.
+//
+// Map will allocate maps, slices, and pointers as necessary,
+// with the following additional rules:
+//
+// To map Lua value into a pointer, Map allocates a new value.
+//
+// To map Lua table into a struct, Map matches incoming Lua table
+// keys to the struct field name or its tag.
+// Lua table keys which don't have a corresponding struct field are ignored.
+//
+// To map Lua value into an interface value,
+// Map stores one of these in the interface value:
+//
+//	bool, for Lua booleans
+//	float64, for Lua numbers
+//	string, for Lua strings
+//	[]interface{}, for Lua arrays
+//	map[string]interface{}, for Lua tables
+//	nil for Lua nil
+//
+// To map a Lua array into a slice, Map resets the slice to a new one
+// if the capacity is not large enough, or set the len of the slice.
+//
+// To map a Lua array into a Go array, Map maps Lua array elements into
+// corresponding Go array elements.
+// If the Go array is smaller than the Lua array,
+// the additional Lua array elements are discarded.
+// If the Lua array is smaller than the Go array,
+// the additional Go array elements are set to zero values.
+//
+// To map a Lua table into a map, Map first allocates a map to use
+// if the old map is nil or not empty.
+// Map then stores key-value pairs from the Lua table into the map.
+// The Lua table's key-values are ignored
+// if the Lua key can not be mapped into a Go key
+// or the Lua value can not be mapped into a Go value
+//
 // If tag name is needed, please use NewMapperWithTagName(tagName).Map(...)
 func Map(lv lua.LValue, output interface{}) error {
 	return NewMapper().Map(lv, output)
