@@ -326,6 +326,11 @@ func TestMapArray(t *testing.T) {
 	err = Map(tbl, &c)
 	assert.EqualError(err, "array[0]: bool expected but got Lua number")
 
+	err = L.DoString(`t = 1234`)
+	assert.NoError(err)
+	err = Map(L.GetGlobal("t"), &a)
+	assert.EqualError(err, "[3]int expected but got Lua number")
+
 	ud := L.NewUserData()
 	arr := [3]int{4, 5, 6}
 	ud.Value = arr
