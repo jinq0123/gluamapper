@@ -286,7 +286,8 @@ func toInterface(lv lua.LValue) interface{} {
 		return v // keep as *LFunction
 	case *lua.LUserData:
 		return v.Value // may be nil
-	// case *lua.LTThread: no such type
+	case *lua.LState: // LTThread
+		return v // keep as *LState
 	case *lua.LTable:
 		return luaTableToGoInterface(v)
 	case lua.LChannel:
