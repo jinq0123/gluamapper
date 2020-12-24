@@ -64,16 +64,17 @@ MIT
 ## Differences from [yuin/gluamapper](https://github.com/yuin/gluamapper)
 
 + Speedup
-	* Converts directly from lua table to go struct, while yuin/gluamapper
+	* Converts directly from Lua table to Go struct, while yuin/gluamapper
 		converts the table to `map[string]interface{}`,
 		and then converts it to a Go struct using [`mapstructure`](https://github.com/mitchellh/mapstructure/).
 	* No "weak" conversions
-		+ type mismatch will return error
-		+ only convert lua number to int types
+		+ returns error if types are different
+		+ only convert Lua number to int types
 	* Always ignores unused keys
 
 + New feature
-	* Maps lua types other than table to go types
+	* Maps Lua types other than table to Go types
+	* Maps Lua user data to Go value
 
 + Bugfix
 	* TODO: circular reference
