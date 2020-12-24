@@ -3,6 +3,7 @@ package gluamapper
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/yuin/gopher-lua"
@@ -63,6 +64,15 @@ func TestTagName(t *testing.T) {
 	err = m.Map(L.GetGlobal("a"), &output)
 	assert.NoError(err)
 	assert.Equal(A{Abc: 123}, output)
+
+	type B struct {
+		Bbb int `mytag:""`
+	}
+	err = L.DoString(`b = {Bbb =  123}`)
+	assert.NoError(err)
+	var goB B
+	err = m.Map(L.GetGlobal("b"), &goB)
+	assert.Equal(B{Bbb: 123}, goB)
 }
 
 func TestMapMap(t *testing.T) {
@@ -152,6 +162,25 @@ func TestMapSlice(t *testing.T) {
 	err = Map(tbl, &output)
 	assert.NoError(err)
 	assert.Equal([]int{1, 2, 3}, output)
+	output = []int{1}
+	err = Map(tbl, &output)
+	assert.NoError(err)
+	assert.Equal([]int{1, 2, 3}, output)
+	output = []int{4, 5, 6}
+	err = Map(tbl, &output)
+	assert.NoError(err)
+	assert.Equal([]int{1, 2, 3}, output)
+	output = []int{1, 2, 3, 4, 5, 6, 7}
+	err = Map(tbl, &output)
+	assert.NoError(err)
+	assert.Equal([]int{1, 2, 3}, output)
+
+	err = L.DoString(`t = {1,2,3,true}`)
+	assert.NoError(err)
+	tbl = L.GetGlobal("t")
+	err = Map(tbl, &output)
+	assert.EqualError(err, "int expected but got lua boolean")
+
 	err = Map(lua.LNil, &output)
 	assert.NoError(err)
 	assert.Nil(output)
@@ -191,6 +220,17 @@ func TestMapStruct(t *testing.T) {
 	assert.NoError(err)
 
 	L := lua.NewState()
+	err = L.DoString(`
+	    person = { Name = "Michel" }
+		p2 = { Name = true }
+	`)
+	assert.NoError(err)
+	err = Map(L.GetGlobal("person"), &output)
+	assert.NoError(err)
+	assert.Equal(testPerson{Name: "Michel"}, output)
+	err = Map(L.GetGlobal("p2"), &output)
+	assert.EqualError(err, "Name: string expected but got lua boolean")
+
 	ud := L.NewUserData()
 	ud.Value = nil
 	err = Map(ud, &output)
@@ -225,6 +265,23 @@ func TestMapStructWithUnexportedField(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(123, output.Aa)
 	assert.Equal(456, output.bb) // unexported field
+
+	err = L.DoString(`
+		t = {Aa = 123, bb = 456}
+	`)
+	assert.NoError(err)
+	err = Map(L.GetGlobal("t"), &output)
+	assert.NoError(err)
+	assert.Equal(A{Aa: 123, bb: 456}, output)
+
+	err = L.DoString(`
+		t = {wall = 1234}
+	`)
+	assert.NoError(err)
+	var tm time.Time // struct { wall uint64, ...}
+	err = Map(L.GetGlobal("t"), &tm)
+	assert.NoError(err)
+	assert.Equal(time.Time{}, tm) // wall is unexported
 }
 
 func TestValueOfNil(t *testing.T) {
