@@ -8,7 +8,6 @@ import (
 )
 
 // Map maps the lua value to the given go pointer.
-// Please reset output before Map()
 func Map(lv lua.LValue, output interface{}) error {
 	return NewMapper().Map(lv, output)
 }
@@ -302,6 +301,7 @@ func luaTableToGoInterface(tbl *lua.LTable) interface{} {
 }
 
 func mapLuaUserDataToGoValue(ud *lua.LUserData, rv reflect.Value) error {
+	assert.True(rv.IsValid()) // rv.Kind() != Invalid
 	udValue := ud.Value
 	if udValue == nil {
 		if canBeNil(rv) {

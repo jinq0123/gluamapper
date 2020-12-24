@@ -29,7 +29,6 @@ func NewMapperWithTagName(tagName string) *Mapper {
 }
 
 // Map maps the lua value to the given go pointer.
-// Please reset output before Map()
 func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 	rv := reflect.ValueOf(output)
 	if rv.Kind() != reflect.Ptr {
@@ -39,7 +38,6 @@ func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 }
 
 // MapValue maps the lua value to go value.
-// Please reset go value before MapValue()
 func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
 	if lv != lua.LNil {
 		return m.mapNonNilValue(lv, rv)
@@ -223,7 +221,7 @@ func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
 	mapType := rv.Type()
 	keyType := mapType.Key()
 	elemType := mapType.Elem()
-	if rv.IsNil() {
+	if rv.IsNil() || rv.Len() > 0 { // reset map
 		rv.Set(reflect.MakeMap(mapType))
 	}
 	tbl.ForEach(func(lKey, lVal lua.LValue) {

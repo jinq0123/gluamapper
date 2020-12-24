@@ -84,7 +84,6 @@ func TestMapMap(t *testing.T) {
 	assert.Equal(222, output[222])
 	assert.Equal(444, output[444]) // 444.4 -> 444
 
-	output = nil
 	err = Map(L.GetGlobal("arr"), &output)
 	assert.NoError(err)
 	assert.Equal(3, len(output))
@@ -120,6 +119,9 @@ func TestMapPtr(t *testing.T) {
 	assert.NoError(err)
 	assert.Nil(output)
 
+	err = Map(lua.LString("abc"), &output)
+	assert.EqualError(err, "int expected but got lua string")
+
 	L := lua.NewState()
 	ud := L.NewUserData()
 	err = Map(ud, &output)
@@ -150,7 +152,6 @@ func TestMapSlice(t *testing.T) {
 	err = Map(tbl, &output)
 	assert.NoError(err)
 	assert.Equal([]int{1, 2, 3}, output)
-	output = nil
 	err = Map(lua.LNil, &output)
 	assert.NoError(err)
 	assert.Nil(output)
@@ -163,20 +164,17 @@ func TestMapSlice(t *testing.T) {
 
 	goSlice := []int{1, 2, 3}
 	ud.Value = goSlice
-	output = nil
 	err = Map(ud, &output)
 	assert.NoError(err)
 	assert.Equal(goSlice, output)
 
 	goArray := [3]int{1, 2, 3}
 	ud.Value = goArray
-	output = nil
 	err = Map(ud, &output)
 	assert.EqualError(err, "[]int expected but got lua user data of [3]int")
 
 	goFloatSlice := []float32{1, 2, 3}
 	ud.Value = goFloatSlice
-	output = nil
 	err = Map(ud, &output)
 	assert.EqualError(err, "[]int expected but got lua user data of []float32")
 

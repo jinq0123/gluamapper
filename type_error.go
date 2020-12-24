@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	assert "github.com/arl/assertgo"
 	"github.com/yuin/gopher-lua"
 )
 
@@ -17,6 +18,7 @@ type TypeError struct {
 }
 
 func newTypeError(lv lua.LValue, rv reflect.Value) *TypeError {
+	assert.True(rv.IsValid())
 	goType := rv.Type()
 	luaType := lv.Type()
 	result := &TypeError{

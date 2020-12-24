@@ -462,7 +462,6 @@ func TestMapString(t *testing.T) {
 	err = Map(lua.LString("abc"), &output)
 	assert.NoError(err)
 	assert.Equal("abc", output)
-	output = ""
 
 	err = Map(lua.LNil, &output)
 	assert.NoError(err)
@@ -513,14 +512,12 @@ func TestMapInterface(t *testing.T) {
 	assert.NoError(err)
 	assert.NotEmpty(output)
 	assert.Equal(float64(1234), output.(map[string]interface{})["a"])
-	output = nil
 	err = Map(L.GetGlobal("f"), &output)
 	assert.NoError(err)
 	assert.NotNil(output)
 	err = Map(L.GetGlobal("t2t"), &output)
 	assert.NoError(err)
 	assert.EqualValues(map[string]interface{}{}, output)
-	output = nil
 	err = Map(L.GetGlobal("arr"), &output)
 	assert.NoError(err)
 	assert.EqualValues([]interface{}{1.0, 2.0, 3.0}, output)
