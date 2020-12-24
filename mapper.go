@@ -93,8 +93,8 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 		return TBI
 	case reflect.Complex128:
 		return TBI
-	case reflect.Array: // TODO
-		return TBI
+	case reflect.Array:
+		return m.mapArray(lv, rv)
 	case reflect.Chan:
 		return TBI
 	case reflect.Func:
@@ -115,6 +115,18 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 		return TBI
 	}
 	return fmt.Errorf("unsupported type: %s", rv.Kind())
+}
+
+func (m *Mapper) mapArray(lv lua.LValue, rv reflect.Value) error {
+	assert.True(lv != lua.LNil)
+	assert.True(rv.Kind() == reflect.Array)
+	switch v := lv.(type) {
+	case *lua.LTable:
+		return m.mapLuaTableToGoArray(v, rv)
+	case *lua.LUserData:
+		return mapLuaUserDataToGoValue(v, rv)
+	}
+	return newTypeError(lv, rv)
 }
 
 func (m *Mapper) mapMap(lv lua.LValue, rv reflect.Value) error {
@@ -154,6 +166,18 @@ func (m *Mapper) mapSlice(lv lua.LValue, rv reflect.Value) error {
 	return newTypeError(lv, rv)
 }
 
+func (m *Mapper) mapLuaTableToGoArray(tbl *lua.LTable, rv reflect.Value) error {
+	assert.True(tbl != nil)
+	assert.True(rv.Kind() == reflect.Array)
+	arrLen := rv.Len()
+	for i := 0; i < arrLen; i++ {
+		if err := m.MapValue(tbl.RawGetInt(i+1), rv.Index(i)); err != nil {
+			return fmt.Errorf("array[%d]: %w", i, err)
+		}
+	}
+	return nil
+}
+
 func (m *Mapper) mapLuaTableToGoSlice(tbl *lua.LTable, rv reflect.Value) error {
 	assert.True(tbl != nil)
 	assert.True(rv.Kind() == reflect.Slice)
@@ -169,7 +193,7 @@ func (m *Mapper) mapLuaTableToGoSlice(tbl *lua.LTable, rv reflect.Value) error {
 
 	for i := 0; i < tblLen; i++ {
 		if err := m.MapValue(tbl.RawGetInt(i+1), rv.Index(i)); err != nil {
-			return err
+			return fmt.Errorf("slice[%d]: %w", i, err)
 		}
 	}
 	return nil
@@ -221,6 +245,7 @@ func getFieldName(field reflect.StructField, tagName string) string {
 	return fieldName
 }
 
+// Always returns nil
 func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
 	assert.True(tbl != nil)
 	assert.True(rv.Kind() == reflect.Map)

@@ -179,7 +179,7 @@ func TestMapSlice(t *testing.T) {
 	assert.NoError(err)
 	tbl = L.GetGlobal("t")
 	err = Map(tbl, &output)
-	assert.EqualError(err, "int expected but got lua boolean")
+	assert.EqualError(err, "slice[3]: int expected but got lua boolean")
 
 	err = Map(lua.LNil, &output)
 	assert.NoError(err)
@@ -305,4 +305,33 @@ func TestMapValueIsNil(t *testing.T) {
 	var n *int
 	err := Map(lua.LTrue, n)
 	assert.EqualError(err, "output value is nil")
+}
+
+func TestMapArray(t *testing.T) {
+	assert := require.New(t)
+	L := lua.NewState()
+	err := L.DoString(`tbl = {1,2,3,4,5.5,a=123}`)
+	assert.NoError(err)
+	tbl := L.GetGlobal("tbl")
+
+	var a [3]int
+	err = Map(tbl, &a)
+	assert.NoError(err)
+	assert.Equal([3]int{1, 2, 3}, a)
+	var b [10]int
+	err = Map(tbl, &b)
+	assert.NoError(err)
+	assert.Equal([10]int{1, 2, 3, 4, 5}, b)
+	var c [2]bool
+	err = Map(tbl, &c)
+	assert.EqualError(err, "array[0]: bool expected but got lua number")
+
+	ud := L.NewUserData()
+	arr := [3]int{4, 5, 6}
+	ud.Value = arr
+	var d [3]int
+	err = Map(ud, &d)
+	assert.Equal(arr, d)
+	err = Map(ud, &c)
+	assert.EqualError(err, "[2]bool expected but got lua user data of [3]int")
 }
