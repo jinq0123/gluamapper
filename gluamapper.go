@@ -33,8 +33,8 @@ import (
 //	map[string]interface{}, for Lua tables
 //	nil for Lua nil
 //
-// To map a Lua array into a slice, Map resets the slice to a new one
-// if the capacity is not large enough, or set the len of the slice.
+// To map a Lua array into a slice, Map sets the slice len as Lua array len.
+// If the slice capacity is not large enough, Map resets the slice to a new one
 //
 // To map a Lua array into a Go array, Map maps Lua array elements into
 // corresponding Go array elements.
