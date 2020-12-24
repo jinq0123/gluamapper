@@ -42,10 +42,10 @@ func newTypeError(lv lua.LValue, rv reflect.Value) *TypeError {
 
 func (t *TypeError) Error() string {
 	if t.luaType != lua.LTUserData {
-		return fmt.Sprintf("%s expected but got lua %s", t.goType, t.luaType)
+		return fmt.Sprintf("%s expected but got Lua %s", t.goType, t.luaType)
 	}
 	if t.isLuaUserDataValueNil {
-		return fmt.Sprintf("%s expected but got lua user data of nil", t.goType)
+		return fmt.Sprintf("%s expected but got Lua user data of nil", t.goType)
 	}
-	return fmt.Sprintf("%s expected but got lua user data of %s", t.goType, t.luaUserDataValueType)
+	return fmt.Sprintf("%s expected but got Lua user data of %s", t.goType, t.luaUserDataValueType)
 }

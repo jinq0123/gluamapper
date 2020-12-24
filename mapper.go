@@ -14,9 +14,9 @@ var (
 	OutputValueIsNilError = errors.New("output value is nil")
 )
 
-// Mapper maps a lua table to a Go struct pointer.
+// Mapper maps a Lua table to a Go struct pointer.
 type Mapper struct {
-	// A struct tag name for lua table keys.
+	// A struct tag name for Lua table keys.
 	TagName string
 }
 
@@ -32,7 +32,7 @@ func NewMapperWithTagName(tagName string) *Mapper {
 	}
 }
 
-// Map maps the lua value to the given go pointer.
+// Map maps the Lua value to the given Go pointer.
 func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 	rv := reflect.ValueOf(output)
 	if rv.Kind() != reflect.Ptr {
@@ -41,7 +41,7 @@ func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 	return m.MapValue(lv, rv.Elem())
 }
 
-// MapValue maps the lua value to go value.
+// MapValue maps the Lua value to Go value.
 func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
 	if lv != lua.LNil {
 		return m.mapNonNilValue(lv, rv)

@@ -100,7 +100,7 @@ func TestMapMap(t *testing.T) {
 	assert.Equal(map[int]int{1: 1, 2: 2, 3: 3}, output)
 
 	err = Map(L.GetGlobal("n"), &output)
-	assert.EqualError(err, "map[int]int expected but got lua number")
+	assert.EqualError(err, "map[int]int expected but got Lua number")
 
 	ud := L.NewUserData()
 	err = Map(ud, &output)
@@ -108,7 +108,7 @@ func TestMapMap(t *testing.T) {
 	assert.Nil(output)
 	ud.Value = 123
 	err = Map(ud, &output)
-	assert.EqualError(err, "map[int]int expected but got lua user data of int")
+	assert.EqualError(err, "map[int]int expected but got Lua user data of int")
 	ud.Value = map[int]int{1: 1}
 	err = Map(ud, &output)
 	assert.NoError(err)
@@ -130,7 +130,7 @@ func TestMapPtr(t *testing.T) {
 	assert.Nil(output)
 
 	err = Map(lua.LString("abc"), &output)
-	assert.EqualError(err, "int expected but got lua string")
+	assert.EqualError(err, "int expected but got Lua string")
 
 	L := lua.NewState()
 	ud := L.NewUserData()
@@ -147,7 +147,7 @@ func TestMapPtr(t *testing.T) {
 	f := 123.0
 	ud.Value = &f
 	err = Map(ud, &output)
-	assert.EqualError(err, "*int expected but got lua user data of *float64")
+	assert.EqualError(err, "*int expected but got Lua user data of *float64")
 }
 
 func TestMapSlice(t *testing.T) {
@@ -179,7 +179,7 @@ func TestMapSlice(t *testing.T) {
 	assert.NoError(err)
 	tbl = L.GetGlobal("t")
 	err = Map(tbl, &output)
-	assert.EqualError(err, "slice[3]: int expected but got lua boolean")
+	assert.EqualError(err, "slice[3]: int expected but got Lua boolean")
 
 	err = Map(lua.LNil, &output)
 	assert.NoError(err)
@@ -200,15 +200,15 @@ func TestMapSlice(t *testing.T) {
 	goArray := [3]int{1, 2, 3}
 	ud.Value = goArray
 	err = Map(ud, &output)
-	assert.EqualError(err, "[]int expected but got lua user data of [3]int")
+	assert.EqualError(err, "[]int expected but got Lua user data of [3]int")
 
 	goFloatSlice := []float32{1, 2, 3}
 	ud.Value = goFloatSlice
 	err = Map(ud, &output)
-	assert.EqualError(err, "[]int expected but got lua user data of []float32")
+	assert.EqualError(err, "[]int expected but got Lua user data of []float32")
 
 	err = Map(lua.LTrue, &output)
-	assert.EqualError(err, "[]int expected but got lua boolean")
+	assert.EqualError(err, "[]int expected but got Lua boolean")
 }
 
 func TestMapStruct(t *testing.T) {
@@ -219,7 +219,7 @@ func TestMapStruct(t *testing.T) {
 	err = Map(lua.LNil, &output)
 	assert.NoError(err)
 	err = Map(lua.LTrue, &output)
-	assert.EqualError(err, "gluamapper.testPerson expected but got lua boolean")
+	assert.EqualError(err, "gluamapper.testPerson expected but got Lua boolean")
 
 	L := lua.NewState()
 	err = L.DoString(`
@@ -231,12 +231,12 @@ func TestMapStruct(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(testPerson{Name: "Michel"}, output)
 	err = Map(L.GetGlobal("p2"), &output)
-	assert.EqualError(err, "Name: string expected but got lua boolean")
+	assert.EqualError(err, "Name: string expected but got Lua boolean")
 
 	ud := L.NewUserData()
 	ud.Value = nil
 	err = Map(ud, &output)
-	assert.EqualError(err, "gluamapper.testPerson expected but got lua user data of nil")
+	assert.EqualError(err, "gluamapper.testPerson expected but got Lua user data of nil")
 
 	ud.Value = testPerson{Name: "name"}
 	output.Name = ""
@@ -246,7 +246,7 @@ func TestMapStruct(t *testing.T) {
 
 	ud.Value = &testPerson{}
 	err = Map(ud, &output)
-	assert.EqualError(err, "gluamapper.testPerson expected but got lua user data of *gluamapper.testPerson")
+	assert.EqualError(err, "gluamapper.testPerson expected but got Lua user data of *gluamapper.testPerson")
 }
 
 func TestMapStructWithUnexportedField(t *testing.T) {
@@ -324,7 +324,7 @@ func TestMapArray(t *testing.T) {
 	assert.Equal([10]int{1, 2, 3, 4, 5}, b)
 	var c [2]bool
 	err = Map(tbl, &c)
-	assert.EqualError(err, "array[0]: bool expected but got lua number")
+	assert.EqualError(err, "array[0]: bool expected but got Lua number")
 
 	ud := L.NewUserData()
 	arr := [3]int{4, 5, 6}
@@ -333,5 +333,5 @@ func TestMapArray(t *testing.T) {
 	err = Map(ud, &d)
 	assert.Equal(arr, d)
 	err = Map(ud, &c)
-	assert.EqualError(err, "[2]bool expected but got lua user data of [3]int")
+	assert.EqualError(err, "[2]bool expected but got Lua user data of [3]int")
 }
