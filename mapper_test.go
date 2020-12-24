@@ -218,6 +218,8 @@ func TestMapStruct(t *testing.T) {
 
 	err = Map(lua.LNil, &output)
 	assert.NoError(err)
+	err = Map(lua.LTrue, &output)
+	assert.EqualError(err, "gluamapper.testPerson expected but got lua boolean")
 
 	L := lua.NewState()
 	err = L.DoString(`
@@ -289,4 +291,18 @@ func TestValueOfNil(t *testing.T) {
 	var x interface{}
 	rv := reflect.ValueOf(x)
 	assert.Equal(reflect.Invalid, rv.Kind())
+}
+
+func TestNilValue(t *testing.T) {
+	assert := require.New(t)
+	var p *int
+	err := Map(lua.LTrue, p)
+	assert.Equal(OutputValueIsNilError, err)
+}
+
+func TestMapValueIsNil(t *testing.T) {
+	assert := require.New(t)
+	var n *int
+	err := Map(lua.LTrue, n)
+	assert.EqualError(err, "output value is nil")
 }

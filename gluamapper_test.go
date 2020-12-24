@@ -90,7 +90,7 @@ func TestError(t *testing.T) {
 
 	var p *int
 	err = Map(lua.LNil, p)
-	assert.EqualError(err, "output value is nil")
+	assert.Equal(OutputValueIsNilError, err)
 	err = Map(lua.LNil, &p)
 	assert.NoError(err)
 	assert.Nil(p)

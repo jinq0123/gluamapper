@@ -10,6 +10,8 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
+var OutputValueIsNilError = errors.New("output value is nil")
+
 // Mapper maps a lua table to a Go struct pointer.
 type Mapper struct {
 	// A struct tag name for lua table keys.
@@ -48,7 +50,7 @@ func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
 		rv.Set(reflect.Zero(rv.Type()))
 		return nil
 	}
-	return errors.New("output value is nil")
+	return OutputValueIsNilError
 }
 
 func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
@@ -56,7 +58,7 @@ func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 	TBI := errors.New("to be implemented")
 	switch rv.Kind() {
 	case reflect.Invalid:
-		// noop
+		return OutputValueIsNilError
 	case reflect.Bool:
 		return mapBool(lv, rv)
 	case reflect.Int:
