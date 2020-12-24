@@ -1,6 +1,7 @@
 package gluamapper
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,33 @@ type testPerson struct {
 	Age       int
 	WorkPlace string
 	Role      []*testRole
+}
+
+func TestReflectValueSetZero(t *testing.T) {
+	var rv reflect.Value
+	assert := require.New(t)
+	var n int
+	rv = reflect.ValueOf(&n).Elem()
+	rv.Set(reflect.Zero(rv.Type()))
+	assert.Zero(n)
+
+	var itf interface{}
+	rv = reflect.ValueOf(&itf).Elem()
+	rv.Set(reflect.Zero(rv.Type()))
+	assert.Empty(itf)
+
+	var arr [3]int
+	rv = reflect.ValueOf(&arr).Elem()
+	rv.Set(reflect.Zero(rv.Type()))
+	assert.Zero(arr)
+	var st struct{ a int }
+	rv = reflect.ValueOf(&st).Elem()
+	rv.Set(reflect.Zero(rv.Type()))
+	assert.Zero(st)
+	var p *int
+	rv = reflect.ValueOf(&p).Elem()
+	rv.Set(reflect.Zero(rv.Type()))
+	assert.Zero(p)
 }
 
 func TestTagName(t *testing.T) {
@@ -46,6 +74,7 @@ func TestMapMap(t *testing.T) {
 	err = L.DoString(`
 		tbl = {abc = 123, [222]=222, [333]="333", [444]=444.4}
 		arr = {1,2,3}
+		n = 123
 	`)
 	assert.NoError(err)
 
@@ -60,6 +89,9 @@ func TestMapMap(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(3, len(output))
 	assert.Equal(map[int]int{1: 1, 2: 2, 3: 3}, output)
+
+	err = Map(L.GetGlobal("n"), &output)
+	assert.EqualError(err, "map[int]int expected but got lua number")
 
 	ud := L.NewUserData()
 	err = Map(ud, &output)
@@ -83,6 +115,10 @@ func TestMapPtr(t *testing.T) {
 	err = Map(lua.LNumber(123), &output)
 	assert.NoError(err)
 	assert.Equal(123, *output)
+
+	err = Map(lua.LNil, &output)
+	assert.NoError(err)
+	assert.Nil(output)
 
 	L := lua.NewState()
 	ud := L.NewUserData()
@@ -191,4 +227,11 @@ func TestMapStructWithUnexportedField(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(123, output.Aa)
 	assert.Equal(456, output.bb) // unexported field
+}
+
+func TestValueOfNil(t *testing.T) {
+	assert := require.New(t)
+	var x interface{}
+	rv := reflect.ValueOf(x)
+	assert.Equal(reflect.Invalid, rv.Kind())
 }

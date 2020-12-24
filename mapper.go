@@ -33,7 +33,7 @@ func NewMapperWithTagName(tagName string) *Mapper {
 func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 	rv := reflect.ValueOf(output)
 	if rv.Kind() != reflect.Ptr {
-		return errors.New("output must be a pointer")
+		return fmt.Errorf("output must be a pointer but got a %s", rv.Kind())
 	}
 	return m.MapValue(lv, rv.Elem())
 }
@@ -41,16 +41,24 @@ func (m *Mapper) Map(lv lua.LValue, output interface{}) error {
 // MapValue maps the lua value to go value.
 // Please reset go value before MapValue()
 func (m *Mapper) MapValue(lv lua.LValue, rv reflect.Value) error {
-	if lv == lua.LNil {
-		return nil // keep the old value
+	if lv != lua.LNil {
+		return m.mapNonNilValue(lv, rv)
 	}
-	return m.mapNonNilValue(lv, rv)
+
+	// do not call rv.Type() if rv is zero Value
+	if rv.IsValid() {
+		rv.Set(reflect.Zero(rv.Type()))
+		return nil
+	}
+	return errors.New("output value is nil")
 }
 
 func (m *Mapper) mapNonNilValue(lv lua.LValue, rv reflect.Value) error {
 	assert.True(lv != lua.LNil) // lv is not *lua.LNilType
 	TBI := errors.New("to be implemented")
 	switch rv.Kind() {
+	case reflect.Invalid:
+		// noop
 	case reflect.Bool:
 		return mapBool(lv, rv)
 	case reflect.Int:
@@ -186,20 +194,27 @@ func (m *Mapper) mapLuaTableToGoStruct(tbl *lua.LTable, rv reflect.Value) error 
 		}
 
 		field := rvType.Field(i)
-		fieldName := field.Name
-		if m.TagName != "" {
-			tagValue := field.Tag.Get(m.TagName)
-			tagSubValue := strings.SplitN(tagValue, ",", 2)[0]
-			if tagSubValue != "" {
-				fieldName = tagSubValue
-			}
-		} // if m.TagName
-
+		fieldName := getFieldName(field, m.TagName)
 		if err := m.MapValue(tbl.RawGet(lua.LString(fieldName)), fldVal); err != nil {
 			return fmt.Errorf("%s: %w", field.Name, err)
 		}
 	}
 	return nil
+}
+
+// getFieldName get the struct field name.
+func getFieldName(field reflect.StructField, tagName string) string {
+	fieldName := field.Name
+	if tagName == "" {
+		return fieldName
+	}
+
+	tagValue := field.Tag.Get(tagName)
+	tagSubValue := strings.SplitN(tagValue, ",", 2)[0]
+	if tagSubValue != "" {
+		return tagSubValue // use field name from tag value
+	}
+	return fieldName
 }
 
 func (m *Mapper) mapLuaTableToGoMap(tbl *lua.LTable, rv reflect.Value) error {
