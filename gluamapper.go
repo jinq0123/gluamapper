@@ -8,7 +8,7 @@ import (
 )
 
 // Map maps the lua value to the given go pointer.
-// If tag name is needed, please use `NewMapperWithTagName(tagName).Map(...)`
+// If tag name is needed, please use NewMapperWithTagName(tagName).Map(...)
 func Map(lv lua.LValue, output interface{}) error {
 	return NewMapper().Map(lv, output)
 }
