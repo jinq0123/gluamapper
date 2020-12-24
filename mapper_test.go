@@ -73,6 +73,9 @@ func TestTagName(t *testing.T) {
 	var goB B
 	err = m.Map(L.GetGlobal("b"), &goB)
 	assert.Equal(B{Bbb: 123}, goB)
+	err = NewMapperWithTagName("no_such_tag").Map(L.GetGlobal("b"), &goB)
+	assert.NoError(err)
+	assert.Equal(B{Bbb: 123}, goB)
 }
 
 func TestMapMap(t *testing.T) {
